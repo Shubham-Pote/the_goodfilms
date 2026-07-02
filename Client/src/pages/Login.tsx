@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { apiUrl } from "../lib/api";
@@ -9,6 +10,7 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function Login() {
   return (
     <div className="relative min-h-screen flex flex-col bg-black selection:bg-red-500/30">
       {/* Background Image with Dark Overlay */}
-      <div 
+      <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-50 hidden sm:block"
         style={{
           backgroundImage: "url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025&auto=format&fit=crop')",
@@ -52,7 +54,7 @@ export function Login() {
 
       {/* Header / Logo */}
       <div className="relative z-20 px-[5%] py-6 sm:py-8">
-        <Link to="/" className="inline-block text-red-600 font-extrabold text-3xl sm:text-4xl tracking-tight">
+        <Link to="/" className="inline-block text-white-600 font-extrabold text-3xl sm:text-4xl tracking-tight">
           the_goodfilms
         </Link>
       </div>
@@ -60,7 +62,7 @@ export function Login() {
       {/* Login Form Container */}
       <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-4 sm:px-0 pb-16 sm:pb-24">
         <div className="w-full max-w-[450px] sm:bg-black/75 sm:p-16 rounded-md">
-          
+
           <h1 className="text-[32px] font-bold text-white mb-7">Sign In</h1>
 
           {error && (
@@ -80,7 +82,7 @@ export function Login() {
                 className="w-full h-14 bg-[#333] border-none text-white px-5 rounded placeholder:text-transparent focus:bg-[#454545] focus:ring-0 peer"
                 placeholder="Username"
               />
-              <label 
+              <label
                 htmlFor="username"
                 className={`absolute left-5 text-[#8c8c8c] transition-all duration-200 pointer-events-none
                   ${username ? 'text-[11px] top-1.5' : 'text-[15px] top-4 peer-focus:text-[11px] peer-focus:top-1.5'}`}
@@ -92,20 +94,27 @@ export function Login() {
             <div className="relative">
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full h-14 bg-[#333] border-none text-white px-5 rounded placeholder:text-transparent focus:bg-[#454545] focus:ring-0 peer"
+                className="w-full h-14 bg-[#333] border-none text-white px-5 pr-12 rounded placeholder:text-transparent focus:bg-[#454545] focus:ring-0 peer"
                 placeholder="Password"
               />
-              <label 
+              <label
                 htmlFor="password"
                 className={`absolute left-5 text-[#8c8c8c] transition-all duration-200 pointer-events-none
                   ${password ? 'text-[11px] top-1.5' : 'text-[15px] top-4 peer-focus:text-[11px] peer-focus:top-1.5'}`}
               >
                 Password
               </label>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8c8c8c] hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
 
             <Button
@@ -140,7 +149,7 @@ export function Login() {
       {/* Footer */}
       <div className="relative z-10 w-full bg-black/75 border-t border-zinc-900/50 sm:bg-black/50 py-8 mt-auto sm:border-none">
         <div className="max-w-[1000px] mx-auto px-[5%] text-[#737373] text-[13px]">
-          <p className="mb-6">Questions? Call 1-800-GOOD-FILMS</p>
+          <p className="mb-6">Questions?  Dont Ask!!</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl">
             <a href="#" className="hover:underline">FAQ</a>
             <a href="#" className="hover:underline">Help Center</a>
