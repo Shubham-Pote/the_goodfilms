@@ -18,4 +18,9 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
+// Add a simple health check route for the root URL
+app.get("/", (req, res) => {
+  res.json({ message: "The Good Films API is up and running!" });
+});
+
 export default app;

@@ -16,6 +16,7 @@ const result = await Bun.build({
   sourcemap: "linked",
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
+    "process.env.VITE_API_BASE_URL": JSON.stringify(process.env.VITE_API_BASE_URL || ""),
     "process.env.TMDB_API_KEY": JSON.stringify(process.env.BUN_PUBLIC_TMDB_API_KEY || process.env.TMDB_API_KEY),
     "process.env.BUN_PUBLIC_TMDB_API_KEY": JSON.stringify(process.env.BUN_PUBLIC_TMDB_API_KEY || process.env.TMDB_API_KEY),
   },
