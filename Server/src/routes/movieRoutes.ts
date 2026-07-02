@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   getPlayerUrls,
   getDownloadLinks
-} from "../controllers/movieController";
+} from "../controllers/movieController.js";
 
 const router = Router();
 

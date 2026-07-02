@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { prisma } from "../db";
-import type { SignupInput, LoginInput } from "../schemas";
+import { prisma } from "../db.js";
+import type { SignupInput, LoginInput } from "../schemas/index.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
