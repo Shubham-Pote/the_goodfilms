@@ -70,9 +70,9 @@ export function SearchPage() {
   return (
     <div className="min-h-screen flex flex-col bg-black text-white overflow-x-hidden">
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-12 pt-10 pb-16">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-12 pt-6 md:pt-10 pb-16">
         <div className="flex flex-col gap-6">
-          <h1 className="text-5xl font-black text-white tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
             Search
           </h1>
 

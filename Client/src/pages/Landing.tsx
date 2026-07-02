@@ -101,11 +101,11 @@ function FeaturedHero() {
           </span>
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-5 drop-shadow-2xl leading-[1.05] break-words line-clamp-3">
+        <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-white mb-3 md:mb-5 drop-shadow-2xl leading-[1.05] break-words line-clamp-3 md:line-clamp-4">
           {title}
         </h1>
 
-        <p className="text-base md:text-xl text-zinc-300 mb-8 line-clamp-3 md:line-clamp-4 max-w-2xl drop-shadow-md">
+        <p className="text-sm sm:text-base md:text-xl text-zinc-300 mb-6 md:mb-8 line-clamp-3 md:line-clamp-4 max-w-2xl drop-shadow-md">
           {featured.overview}
         </p>
 

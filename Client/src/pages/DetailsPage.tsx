@@ -484,10 +484,10 @@ export function DetailsPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
           </div>
 
-          <div className="relative z-10 flex flex-col h-full min-h-[70vh] justify-end px-6 md:px-12 pb-12">
+          <div className="relative z-10 flex flex-col h-full min-h-[70vh] justify-end px-4 md:px-12 pb-8 md:pb-12 pt-20 md:pt-28">
             <button
               onClick={() => navigate(-1)}
-              className="absolute top-8 left-6 md:left-12 flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors z-20"
+              className="absolute top-4 md:top-8 left-4 md:left-12 flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors z-20 bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm"
             >
               <ArrowLeft size={16} />
               Back
@@ -511,7 +511,7 @@ export function DetailsPage() {
                   </p>
                 ) : null}
 
-                <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">{title}</h1>
+                <h1 className="text-3xl md:text-5xl font-extrabold leading-tight break-words">{title}</h1>
 
                 <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-300">
                   {details?.vote_average ? (
@@ -567,17 +567,17 @@ export function DetailsPage() {
                   </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-3 pt-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 w-full sm:w-auto">
                   <Button
                     onClick={() => navigate(`/play/${type}/${id}?s=${season}&e=1`)}
-                    className="bg-white text-black px-7 py-5 rounded-full text-sm font-semibold flex items-center gap-2 hover:bg-zinc-100 shadow-md shadow-black/30 hover:shadow-lg transition-all hover:-translate-y-0.5"
+                    className="bg-white text-black px-7 py-5 rounded-full text-sm font-semibold flex items-center justify-center gap-2 hover:bg-zinc-100 shadow-md shadow-black/30 hover:shadow-lg transition-all hover:-translate-y-0.5 w-full sm:w-auto"
                   >
                     <Play fill="currentColor" size={18} />
                     Watch
                   </Button>
                   <Button
                     onClick={() => handleOpenDownloadModal()}
-                    className={`px-7 py-5 rounded-full text-sm font-semibold flex items-center gap-2 transition-all hover:-translate-y-0.5 shadow-md ${isMovieDownloaded
+                    className={`px-7 py-5 rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 shadow-md w-full sm:w-auto ${isMovieDownloaded
                       ? "bg-green-600 hover:bg-green-700 text-white"
                       : "bg-zinc-900 hover:bg-zinc-850 text-white border border-zinc-800"
                       }`}

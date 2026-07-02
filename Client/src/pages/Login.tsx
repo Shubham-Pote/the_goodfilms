@@ -53,8 +53,8 @@ export function Login() {
       <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/80 via-black/40 to-black hidden sm:block" />
 
       {/* Header / Logo */}
-      <div className="relative z-20 px-[5%] py-6 sm:py-8">
-        <Link to="/" className="inline-block text-white-600 font-extrabold text-3xl sm:text-4xl tracking-tight">
+      <div className="relative z-20 px-4 sm:px-[5%] py-6 sm:py-8">
+        <Link to="/" className="inline-block text-white font-extrabold text-3xl sm:text-4xl tracking-tight">
           the_goodfilms
         </Link>
       </div>
@@ -147,9 +147,9 @@ export function Login() {
       </div>
 
       {/* Footer */}
-      <div className="relative z-10 w-full bg-black/75 border-t border-zinc-900/50 sm:bg-black/50 py-8 mt-auto sm:border-none">
-        <div className="max-w-[1000px] mx-auto px-[5%] text-[#737373] text-[13px]">
-          <p className="mb-6">Questions?  Dont Ask!!</p>
+      <div className="relative z-10 w-full bg-black/75 border-t border-zinc-900/50 sm:bg-black/50 py-8 mt-auto sm:border-none px-4 sm:px-[5%]">
+        <div className="max-w-[1000px] mx-auto text-[#737373] text-[13px]">
+          <p className="mb-6">Questions? Dont Ask!!</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl">
             <a href="#" className="hover:underline">FAQ</a>
             <a href="#" className="hover:underline">Help Center</a>

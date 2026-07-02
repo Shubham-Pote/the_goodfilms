@@ -183,7 +183,7 @@ export function PlayerPage() {
 
   return (
     <div className="fixed inset-0 bg-black text-white">
-      <div className="absolute top-4 left-4 z-20">
+      <div className="absolute top-2 left-2 md:top-4 md:left-4 z-20">
         <button
           onClick={() => navigate(-1)}
           className="w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/10 flex items-center justify-center"
@@ -193,7 +193,7 @@ export function PlayerPage() {
         </button>
       </div>
 
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+      <div className="absolute top-2 right-2 md:top-4 md:right-4 z-20 flex items-center gap-2">
         <div className="flex items-center gap-2 bg-black/60 rounded-full px-1 border border-white/10">
           <div className="pl-3 flex items-center text-zinc-300">
             <Server size={12} />
