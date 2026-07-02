@@ -21,24 +21,6 @@ model User{
     profilePicture  String?
     description     String?
     role            Role   @default(USER)
-    watchHistory    WatchHistory[]
-}
-
-model WatchHistory {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contentId   String   // TMDB or Anilist ID
-  contentType String   // "movie", "tv", "anime"
-  progressKey String   // Unique string like "movie:123" or "tv:123:1:1"
-  progress    Int      // Watch progress percentage
-  timestamp   Int?     // Current playback position in seconds
-  duration    Int?     // Total duration in seconds
-  season      Int?
-  episode     Int?
-  updatedAt   DateTime @updatedAt
-
-  @@unique([userId, progressKey])
 }
 
 enum Gender{

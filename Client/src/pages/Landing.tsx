@@ -137,30 +137,13 @@ function ContinueWatchingRow() {
     const fetchHistory = async () => {
       setIsLoading(true);
       try {
-        const token = localStorage.getItem("token");
+        // Always read from localStorage — no server calls for progress
+        const localStr = localStorage.getItem("video_progress");
         let historyData: any[] = [];
 
-        try {
-          if (token && token !== "null" && token !== "undefined") {
-            const res = await fetch("http://localhost:8080/api/movies/progress", {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (res.ok) {
-              const data = await res.json();
-              if (data.history) {
-                historyData = data.history;
-              }
-            }
-          } else {
-            const localStr = localStorage.getItem("video_progress_guest");
-            if (localStr) {
-              const localObj = JSON.parse(localStr);
-              historyData = Object.values(localObj);
-            }
-          }
-        } catch (fetchErr) {
-          console.warn("Could not fetch progress from server, backend might be offline.");
+        if (localStr) {
+          const localObj = JSON.parse(localStr);
+          historyData = Object.values(localObj);
         }
 
         if (historyData.length === 0) {
@@ -213,54 +196,37 @@ function ContinueWatchingRow() {
     fetchHistory();
   }, []);
 
-  const handleRemoveProgress = async (e: React.MouseEvent, item: TMDBItem) => {
+  const handleRemoveProgress = (e: React.MouseEvent, item: TMDBItem) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const token = localStorage.getItem("token");
     try {
-      if (token && token !== "null" && token !== "undefined") {
-        await fetch("http://localhost:8080/api/movies/progress", {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            contentId: String(item.id),
-            contentType: item.media_type,
-            season: item.season,
-            episode: item.episode
-          })
-        });
-      } else {
-        const localKey = "video_progress_guest";
-        const existingStr = localStorage.getItem(localKey);
-        if (existingStr) {
-          const existing = JSON.parse(existingStr);
-          let progressKey = `${item.media_type}_${item.id}`;
-          if (item.media_type === "tv") {
-            progressKey += `_s${item.season}_e${item.episode}`;
-          }
-          delete existing[progressKey];
-          localStorage.setItem(localKey, JSON.stringify(existing));
+      const localKey = "video_progress";
+      const existingStr = localStorage.getItem(localKey);
+      if (existingStr) {
+        const existing = JSON.parse(existingStr);
+        let progressKey = `${item.media_type}_${item.id}`;
+        if (item.media_type === "tv") {
+          progressKey += `_s${item.season}_e${item.episode}`;
         }
+        delete existing[progressKey];
+        localStorage.setItem(localKey, JSON.stringify(existing));
       }
-
-      setItems((prev) =>
-        prev.filter(
-          (i) =>
-            !(
-              i.id === item.id &&
-              i.media_type === item.media_type &&
-              i.season === item.season &&
-              i.episode === item.episode
-            )
-        )
-      );
     } catch (err) {
       console.error("Failed to remove progress:", err);
     }
+
+    setItems((prev) =>
+      prev.filter(
+        (i) =>
+          !(
+            i.id === item.id &&
+            i.media_type === item.media_type &&
+            i.season === item.season &&
+            i.episode === item.episode
+          )
+      )
+    );
   };
 
   if (!isLoading && items.length === 0) {

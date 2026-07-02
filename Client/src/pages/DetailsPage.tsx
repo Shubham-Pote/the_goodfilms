@@ -16,6 +16,7 @@ import {
 } from "../components/ui/dialog";
 
 import { TMDB_API_KEY } from "@/lib/tmdb";
+import { apiUrl } from "../lib/api";
 
 const POPULAR_TAGLINES: Record<string, string> = {
   "76179": "Never meet your heroes.",
@@ -142,7 +143,7 @@ export function DetailsPage() {
     }
     setDownloadError(null);
     try {
-      const res = await fetch("http://localhost:8080/api/movies/downloads", {
+      const res = await fetch(apiUrl("/api/movies/downloads"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -202,7 +203,7 @@ export function DetailsPage() {
 
       console.log(`[DetailsPage] Searching for: ${currentTitle} (${currentYear})`);
 
-      const searchRes = await fetch("http://localhost:8080/api/movies/downloads", {
+      const searchRes = await fetch(apiUrl("/api/movies/downloads"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -227,7 +228,7 @@ export function DetailsPage() {
       setResolvedSubjectId(subjId);
       setActiveDubSubjectId(subjId);
 
-      const infoRes = await fetch("http://localhost:8080/api/movies/downloads", {
+      const infoRes = await fetch(apiUrl("/api/movies/downloads"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -270,7 +271,7 @@ export function DetailsPage() {
         type: "movie",
       };
 
-      const searchRes = await fetch("http://localhost:8080/api/movies/downloads", {
+      const searchRes = await fetch(apiUrl("/api/movies/downloads"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(searchPayload),
@@ -301,7 +302,7 @@ export function DetailsPage() {
       setResolvedSubjectId(subjId);
       setActiveDubSubjectId(subjId);
       
-      const infoRes = await fetch("http://localhost:8080/api/movies/downloads", {
+      const infoRes = await fetch(apiUrl("/api/movies/downloads"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "tv-info", subjectId: subjId })
@@ -321,7 +322,7 @@ export function DetailsPage() {
   const selectMovieMatch = async (subjId: string) => {
     setDownloadState("fetching");
     try {
-      const movieRes = await fetch("http://localhost:8080/api/movies/downloads", {
+      const movieRes = await fetch(apiUrl("/api/movies/downloads"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "movie", subjectId: subjId }),

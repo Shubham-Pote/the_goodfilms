@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { apiUrl } from "../lib/api";
 
 interface PlayerUrls {
   videasy: string;
@@ -40,62 +41,44 @@ export function PlayerPage() {
   useEffect(() => {
     if (!id || !type) return;
 
-    const progressData = {
-      contentId: id,
-      contentType: type,
-      progress: 1,
-      timestamp: Date.now(),
-      duration: 0,
-      season: season,
-      episode: episode,
-    };
+    try {
+      const localKey = "video_progress";
+      const existingStr = localStorage.getItem(localKey);
+      const existing = existingStr ? JSON.parse(existingStr) : {};
 
-    const saveInitialProgress = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        if (token && token !== "null" && token !== "undefined") {
-          await fetch("http://localhost:8080/api/movies/progress", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(progressData),
-          });
-        } else {
-          const localKey = "video_progress_guest";
-          const existingStr = localStorage.getItem(localKey);
-          const existing = existingStr ? JSON.parse(existingStr) : {};
+      let progressKey = `${type}_${id}`;
+      if (type === "tv") progressKey += `_s${season}_e${episode}`;
 
-          let progressKey = `${type}_${id}`;
-          if (type === "tv") {
-            progressKey += `_s${season}_e${episode}`;
-          }
-
-          if (!existing[progressKey]) {
-            existing[progressKey] = progressData;
-          } else {
-            existing[progressKey].timestamp = Date.now();
-          }
-          localStorage.setItem(localKey, JSON.stringify(existing));
-        }
-      } catch (err) {
-        console.warn("Failed to set initial progress", err);
+      if (!existing[progressKey]) {
+        existing[progressKey] = {
+          contentId: id,
+          contentType: type,
+          progress: 1,
+          timestamp: Date.now(),
+          duration: 0,
+          season,
+          episode,
+          updatedAt: Date.now(),
+        };
+      } else {
+        existing[progressKey].timestamp = Date.now();
+        existing[progressKey].updatedAt = Date.now();
       }
-    };
-
-    saveInitialProgress();
+      localStorage.setItem(localKey, JSON.stringify(existing));
+    } catch (err) {
+      console.warn("Failed to set initial progress", err);
+    }
   }, [id, type, season, episode]);
 
   useEffect(() => {
     if (!id || !type) return;
 
-    let apiUrl = `http://localhost:8080/api/movies/player/${type}/${id}`;
+    let playerApiUrl = apiUrl(`/api/movies/player/${type}/${id}`);
     if (type === "tv") {
-      apiUrl += `?s=${season}&e=${episode}`;
+      playerApiUrl += `?s=${season}&e=${episode}`;
     }
 
-    fetch(apiUrl)
+    fetch(playerApiUrl)
       .then((res) => res.json())
       .then((data) => {
         if (data.servers) setPlayerUrls(data.servers);
@@ -104,67 +87,48 @@ export function PlayerPage() {
   }, [id, type, season, episode]);
 
   useEffect(() => {
-    const handleMessage = async (event: MessageEvent) => {
+    const handleMessage = (event: MessageEvent) => {
       try {
         let payload;
         if (typeof event.data === "string") {
-          try {
-            payload = JSON.parse(event.data);
-          } catch (e) {
-            return;
-          }
+          try { payload = JSON.parse(event.data); } catch { return; }
         } else {
           return;
         }
 
-        const token = localStorage.getItem("token");
-
         const currentId = payload.id || id;
         const currentType = payload.type || type;
         const currentProgress = payload.progress;
-        const currentTimestamp = payload.timestamp;
-        const currentDuration = payload.duration;
 
         if (currentId && currentType && currentProgress !== undefined) {
           const progressData = {
             contentId: currentId,
             contentType: currentType,
             progress: currentProgress,
-            timestamp: currentTimestamp || 0,
-            duration: currentDuration || 0,
+            timestamp: payload.timestamp || 0,
+            duration: payload.duration || 0,
             season: payload.season || season,
             episode: payload.episode || episode,
             updatedAt: Date.now(),
           };
 
-          if (token && token !== "null" && token !== "undefined") {
-            await fetch("http://localhost:8080/api/movies/progress", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify(progressData),
-            });
-          } else {
-            const localKey = "video_progress_guest";
-            const existingStr = localStorage.getItem(localKey);
-            const existing = existingStr ? JSON.parse(existingStr) : {};
+          const localKey = "video_progress";
+          const existingStr = localStorage.getItem(localKey);
+          const existing = existingStr ? JSON.parse(existingStr) : {};
 
-            let progressKey = `${currentType}_${currentId}`;
-            if (currentType === "tv") {
-              progressKey += `_s${progressData.season}_e${progressData.episode}`;
-            }
-
-            existing[progressKey] = progressData;
-            localStorage.setItem(localKey, JSON.stringify(existing));
+          let progressKey = `${currentType}_${currentId}`;
+          if (currentType === "tv") {
+            progressKey += `_s${progressData.season}_e${progressData.episode}`;
           }
+
+          existing[progressKey] = progressData;
+          localStorage.setItem(localKey, JSON.stringify(existing));
         }
 
         if (payload.event === "nextEpisode") {
           setEpisode((prev) => prev + 1);
         }
-      } catch (err) {
+      } catch {
         // ignore
       }
     };

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { apiUrl } from "../lib/api";
 import { Label } from "../components/ui/label";
 
 export function SignUp() {
@@ -15,7 +16,7 @@ export function SignUp() {
     e.preventDefault();
     setError("");
     try {
-      const res = await fetch("http://localhost:8080/api/auth/signup", {
+      const res = await fetch(apiUrl("/api/auth/signup"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password, gender }),
