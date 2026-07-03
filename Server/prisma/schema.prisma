@@ -33,3 +33,43 @@ enum Role {
   USER
   ADMIN
 }
+
+model LiveEvent {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  thumbnail   String?
+  status      EventStatus  @default(UPCOMING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  streams     LiveStream[]
+}
+
+model LiveStream {
+  id          String   @id @default(uuid())
+  eventId     String
+  event       LiveEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name        String   // e.g., "Main MPD", "SS1 English HD"
+  streamUrl   String
+  streamType  StreamType // DASH, HLS
+  drmScheme   String?  // e.g., "ClearKey", "Widevine"
+  drmKeyId    String?  // For ClearKey
+  drmKey      String?  // For ClearKey
+  licenseUrl  String?
+  referer     String?
+  cookie      String?
+  origin      String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+}
+
+enum EventStatus {
+  UPCOMING
+  LIVE
+  ENDED
+}
+
+enum StreamType {
+  DASH
+  HLS
+}

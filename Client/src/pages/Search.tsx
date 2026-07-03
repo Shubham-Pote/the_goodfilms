@@ -98,7 +98,7 @@ export function SearchPage() {
           {/* Grid Results */}
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              <div className="w-12 h-12 border-4 border-zinc-800 border-t-red-600 rounded-full animate-spin"></div>
             </div>
           ) : results.length === 0 ? (
             <div className="text-zinc-500 py-12 text-base">

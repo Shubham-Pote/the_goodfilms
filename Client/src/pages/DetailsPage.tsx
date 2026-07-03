@@ -681,7 +681,7 @@ export function DetailsPage() {
             <>
               {isEpisodesLoading ? (
                 <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                  <div className="w-12 h-12 border-4 border-zinc-800 border-t-red-600 rounded-full animate-spin"></div>
                 </div>
               ) : episodes.length === 0 ? (
                 <div className="text-zinc-500 py-8 text-center">No episodes available for this season.</div>
@@ -1449,7 +1449,7 @@ export function DetailsPage() {
                 <div className="flex flex-col items-center justify-center py-16 gap-5">
                   <div className="relative">
                     <div className="w-16 h-16 rounded-full border-[3px] border-zinc-800"></div>
-                    <div className="absolute inset-0 w-16 h-16 rounded-full border-[3px] border-transparent border-t-red-500 animate-spin"></div>
+                    <div className="absolute inset-0 w-16 h-16 border-4 border-zinc-800 border-t-red-600 rounded-full animate-spin m-auto"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <Download size={20} className="text-red-500 animate-pulse" />
                     </div>

@@ -25,3 +25,27 @@ export const progressSchema = z.object({
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ProgressInput = z.infer<typeof progressSchema>;
+
+export const liveEventSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  thumbnail: z.string().optional(),
+  status: z.enum(["UPCOMING", "LIVE", "ENDED"]).default("UPCOMING"),
+});
+
+export const liveStreamSchema = z.object({
+  name: z.string().min(1, "Stream name is required"),
+  streamUrl: z.string().url("Must be a valid URL"),
+  streamType: z.enum(["DASH", "HLS"]),
+  drmScheme: z.string().optional(),
+  drmKeyId: z.string().optional(),
+  drmKey: z.string().optional(),
+  licenseUrl: z.string().optional(),
+  referer: z.string().optional(),
+  cookie: z.string().optional(),
+  origin: z.string().optional(),
+  userAgent: z.string().optional(),
+});
+
+export type LiveEventInput = z.infer<typeof liveEventSchema>;
+export type LiveStreamInput = z.infer<typeof liveStreamSchema>;

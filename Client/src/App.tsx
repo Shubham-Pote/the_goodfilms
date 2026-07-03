@@ -6,6 +6,9 @@ import { DetailsPage } from "./pages/DetailsPage";
 import { PlayerPage } from "./pages/PlayerPage";
 import { SearchPage } from "./pages/Search";
 import { Header } from "./components/Header";
+import { LivePage } from "./pages/LivePage";
+import { LivePlayerPage } from "./pages/LivePlayerPage";
+import { LiveAdminPage } from "./pages/LiveAdminPage";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem("token");
@@ -19,17 +22,21 @@ function AppLayout() {
   const location = useLocation();
   // Hide header on player page (fullscreen experience)
   const isPlayerPage = location.pathname.startsWith("/play/");
+  const isLivePlayerPage = location.pathname.startsWith("/live/") && location.pathname !== "/live";
   const isAuthPage = location.pathname === "/login";
   const isDetailPage = location.pathname.startsWith("/title/");
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
-      {!isPlayerPage && !isAuthPage && !isDetailPage && <Header />}
+      {!isPlayerPage && !isLivePlayerPage && !isAuthPage && !isDetailPage && <Header />}
       <Routes>
         <Route path="/title/:type/:id" element={<ProtectedRoute><DetailsPage /></ProtectedRoute>} />
         <Route path="/play/:type/:id" element={<ProtectedRoute><PlayerPage /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
         <Route path="/login" element={<Login />} />
+        <Route path="/live" element={<ProtectedRoute><LivePage /></ProtectedRoute>} />
+        <Route path="/live/:id" element={<ProtectedRoute><LivePlayerPage /></ProtectedRoute>} />
+        <Route path="/admin/live" element={<ProtectedRoute><LiveAdminPage /></ProtectedRoute>} />
         <Route path="/" element={<ProtectedRoute><Landing /></ProtectedRoute>} />
       </Routes>
     </div>

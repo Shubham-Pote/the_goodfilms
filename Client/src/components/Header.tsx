@@ -10,6 +10,7 @@ const NAV_TABS = [
   { label: "TV Shows", tab: "tv", path: "/?tab=tv" },
   { label: "Movies", tab: "movies", path: "/?tab=movies" },
   { label: "Anime", tab: "anime", path: "/?tab=anime" },
+  { label: "Live", tab: "live", path: "/live" },
 ];
 
 export function Header() {
@@ -77,6 +78,14 @@ export function Header() {
                 )}
               </Link>
             ))}
+            {user?.role === "ADMIN" && (
+              <Link
+                to="/admin/live"
+                className="relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-zinc-400 hover:text-white hover:bg-white/[0.06]"
+              >
+                Admin (Live)
+              </Link>
+            )}
           </div>
 
           {/* Right: Search + Auth */}

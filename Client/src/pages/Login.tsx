@@ -123,7 +123,7 @@ export function Login() {
               className="w-full h-12 mt-6 bg-[#e50914] hover:bg-[#c11119] text-white font-bold text-[16px] rounded transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                <div className="w-5 h-5 border-2 border-zinc-800 border-t-white rounded-full animate-spin mx-auto" />
               ) : (
                 "Sign In"
               )}
