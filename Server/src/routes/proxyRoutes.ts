@@ -25,6 +25,12 @@ router.all("/", async (req, res) => {
     const fetchHeaders: Record<string, string> = {
       "User-Agent": userAgent,
       "Accept": "*/*",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Sec-Fetch-Dest": "empty",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Site": "cross-site",
+      "Pragma": "no-cache",
+      "Cache-Control": "no-cache"
     };
     
     if (referer) fetchHeaders["Referer"] = referer;
