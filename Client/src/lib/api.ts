@@ -2,9 +2,11 @@ const defaultApiBase = (typeof window !== "undefined" && window.location.hostnam
   ? "http://localhost:8080" 
   : "https://the-goodfilms.vercel.app";
 
-// The project uses Bun build, not Vite! It replaces process.env directly.
-export const API_BASE = process.env.VITE_API_BASE_URL || defaultApiBase;
+// Clean the API_BASE by removing any trailing slashes to prevent double-slash URL bugs
+export const API_BASE = (process.env.VITE_API_BASE_URL || defaultApiBase).replace(/\/+$/, '');
 
 export function apiUrl(path: string): string {
-  return `${API_BASE}${path}`;
+  // Ensure the path always starts with a single slash
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE}${cleanPath}`;
 }
