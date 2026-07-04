@@ -110,24 +110,24 @@ export function LivePlayerPage() {
       
       {/* Top Overlay UI */}
       <div 
-        className={`absolute top-0 left-0 right-0 z-50 p-6 pt-8 flex items-start justify-between bg-gradient-to-b from-black/90 via-black/40 to-transparent transition-all duration-500 ease-in-out ${
+        className={`absolute top-0 left-0 right-0 z-50 p-3 md:p-6 pt-4 md:pt-8 flex flex-row items-center md:items-start justify-between bg-gradient-to-b from-black/90 via-black/40 to-transparent transition-all duration-500 ease-in-out ${
           isUIVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"
         }`}
       >
         {/* Left: Back Button & Title */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 min-w-0 pr-2">
           <button 
             onClick={() => navigate("/live")}
-            className="p-2 opacity-70 hover:opacity-100 text-white transition-opacity"
+            className="p-1 md:p-2 opacity-70 hover:opacity-100 text-white transition-opacity shrink-0"
           >
-            <ArrowLeft size={32} />
+            <ArrowLeft className="w-6 h-6 md:w-8 md:h-8" />
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-white drop-shadow-md">{event.title}</h1>
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-2xl font-bold text-white drop-shadow-md truncate">{event.title}</h1>
             {activeStream && (
-              <p className="text-sm text-zinc-300 drop-shadow-md mt-1 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-                Playing: {activeStream.name}
+              <p className="text-xs md:text-sm text-zinc-300 drop-shadow-md mt-0.5 md:mt-1 flex items-center gap-1.5 md:gap-2 truncate">
+                <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-600 animate-pulse shrink-0"></span>
+                <span className="truncate">Playing: {activeStream.name}</span>
               </p>
             )}
           </div>
@@ -135,14 +135,15 @@ export function LivePlayerPage() {
 
         {/* Right: Server/Stream Selector */}
         {event.streams.length > 0 && (
-          <div className="relative">
+          <div className="relative shrink-0">
             <button 
               onClick={() => setShowServerMenu(!showServerMenu)}
-              className="flex items-center gap-2 px-2 py-2 opacity-70 hover:opacity-100 text-white font-medium transition-opacity"
+              className="flex items-center gap-1.5 md:gap-2 px-2 py-2 opacity-70 hover:opacity-100 text-white text-sm md:text-base font-medium transition-opacity"
             >
-              <Server size={18} className="text-red-500" />
-              <span>{activeStream?.name || "Select Source"}</span>
-              <ChevronDown size={18} className={`transition-transform duration-300 ${showServerMenu ? "rotate-180" : ""}`} />
+              <Server className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
+              <span className="hidden sm:inline-block max-w-[120px] truncate">{activeStream?.name || "Select Source"}</span>
+              <span className="sm:hidden">Src</span>
+              <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 transition-transform duration-300 ${showServerMenu ? "rotate-180" : ""}`} />
             </button>
             
             {showServerMenu && (

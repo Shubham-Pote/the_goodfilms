@@ -160,6 +160,9 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
 
       // Performance & Efficiency Tuning
       player.configure({
+        drm: {
+          parseInbandPsshEnabled: true, // Crucial for HLS DRM streams that don't advertise PSSH in manifest
+        },
         streaming: {
           bufferingGoal: 60,       // Buffer up to 60 seconds of video to prevent stalls
           rebufferingGoal: 5,      // Require 5 seconds of buffer to resume after a stall

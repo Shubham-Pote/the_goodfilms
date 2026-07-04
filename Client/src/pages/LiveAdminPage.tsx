@@ -420,7 +420,26 @@ export function LiveAdminPage() {
                                       </div>
                                       <div className="space-y-1.5">
                                         <label className="text-xs text-zinc-500">URL</label>
-                                        <Input placeholder="Manifest URL" value={streamUrl} onChange={e => setStreamUrl(e.target.value)} required className="bg-transparent border-zinc-800 h-9 rounded-none text-sm font-mono focus:border-white" />
+                                        <Input 
+                                          placeholder="Manifest URL" 
+                                          value={streamUrl} 
+                                          onChange={e => {
+                                            const val = e.target.value;
+                                            if (val.includes('|')) {
+                                              const [urlPart, headersPart] = val.split('|');
+                                              setStreamUrl(urlPart || "");
+                                              const params = new URLSearchParams(headersPart || "");
+                                              if (params.has('Origin')) setOrigin(params.get('Origin') || "");
+                                              if (params.has('Referer')) setReferer(params.get('Referer') || "");
+                                              if (params.has('User-Agent')) setUserAgent(params.get('User-Agent') || "");
+                                              if (params.has('Cookie')) setCookie(params.get('Cookie') || "");
+                                            } else {
+                                              setStreamUrl(val);
+                                            }
+                                          }} 
+                                          required 
+                                          className="bg-transparent border-zinc-800 h-9 rounded-none text-sm font-mono focus:border-white" 
+                                        />
                                       </div>
                                     </div>
 

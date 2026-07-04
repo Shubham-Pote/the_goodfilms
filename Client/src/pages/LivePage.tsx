@@ -101,19 +101,19 @@ export function LivePage() {
   );
 
   return (
-    <div className="min-h-screen bg-black pt-24 pb-20 text-white">
-      <div className="max-w-[1600px] mx-auto px-6 md:px-12">
+    <div className="min-h-screen bg-black pt-20 md:pt-24 pb-20 text-white">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-12">
         
         {/* Header */}
-        <div className="mb-8 md:mb-10 text-center md:text-left">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+        <div className="mb-6 md:mb-10 text-center md:text-left">
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-2 md:mb-4">
             Live <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">Events</span>
           </h1>
-          <p className="text-zinc-400 max-w-2xl text-lg">Watch exclusive live broadcasts, sports, and special events in real-time.</p>
+          <p className="text-zinc-400 max-w-2xl text-base md:text-lg mx-auto md:mx-0">Watch exclusive live broadcasts, sports, and special events in real-time.</p>
         </div>
 
         {/* Search & Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-10 items-center justify-between">
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-8 md:mb-10 items-center justify-between">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
             <input 
@@ -121,7 +121,7 @@ export function LivePage() {
               placeholder="Search events..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 focus:border-red-600 focus:ring-1 focus:ring-red-600 rounded-full pl-11 pr-4 py-3 text-sm text-white outline-none transition-all placeholder:text-zinc-500"
+              className="w-full bg-zinc-900 border border-zinc-800 focus:border-red-600 focus:ring-1 focus:ring-red-600 rounded-full pl-11 pr-4 py-2.5 md:py-3 text-sm text-white outline-none transition-all placeholder:text-zinc-500"
             />
           </div>
           <div className="flex bg-zinc-900 border border-zinc-800 rounded-full p-1 w-full md:w-auto overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
@@ -129,7 +129,7 @@ export function LivePage() {
               <button
                 key={status}
                 onClick={() => setStatusFilter(status as any)}
-                className={`flex-1 md:flex-none px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
+                className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-full text-xs md:text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
                   statusFilter === status 
                     ? "bg-red-600 text-white shadow-md" 
                     : "text-zinc-400 hover:text-white hover:bg-zinc-800"

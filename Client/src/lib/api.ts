@@ -3,7 +3,13 @@ const defaultApiBase = (typeof window !== "undefined" && window.location.hostnam
   : "https://the-goodfilms.vercel.app";
 
 // Clean the API_BASE by removing any trailing slashes to prevent double-slash URL bugs
-export const API_BASE = (process.env.VITE_API_BASE_URL || defaultApiBase).replace(/\/+$/, '');
+let envApiUrl: string | undefined;
+try {
+  envApiUrl = process.env.VITE_API_BASE_URL;
+} catch (e) {
+  // process is not defined in browser if not injected
+}
+export const API_BASE = (envApiUrl || defaultApiBase).replace(/\/+$/, '');
 
 export function apiUrl(path: string): string {
   // Ensure the path always starts with a single slash
