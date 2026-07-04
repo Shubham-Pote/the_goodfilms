@@ -230,8 +230,8 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
   // CORS Blocked Fallback UI
   if (corsBlocked) {
     return (
-      <div className={`relative w-full bg-black overflow-hidden flex items-center justify-center ${className}`}>
-        <div className="flex flex-col items-center gap-6 p-8 text-center max-w-md">
+      <div className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center z-[100] pointer-events-auto ${className || ''}`}>
+        <div className="flex flex-col items-center gap-6 p-8 text-center max-w-md relative z-[110]">
           {/* Shield Icon */}
           <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
@@ -253,7 +253,7 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
             href={streamUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-105"
+            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-105 pointer-events-auto cursor-pointer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="5 3 19 12 5 21 5 3"/>
