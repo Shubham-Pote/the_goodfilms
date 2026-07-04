@@ -29,6 +29,8 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
   const playerRef = useRef<any>(null);
   const uiRef = useRef<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [corsBlocked, setCorsBlocked] = useState(false);
+  const [forceProxy, setForceProxy] = useState(false);
 
   // Auto-hide error toast after 5 seconds
   useEffect(() => {
@@ -100,7 +102,8 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
       // Dynamically decide if we need a proxy. 
       // If the stream requires DRM, custom headers, or specific spoofing, we MUST use the proxy.
       // Otherwise, we fetch directly from the browser to bypass Datacenter IP blocks for standard streams.
-      const needsProxy = Boolean(drmScheme || drmKey || referer || cookie || origin || userAgent);
+      // If user clicked "Try with Proxy", forceProxy overrides the decision.
+      const needsProxy = forceProxy || Boolean(drmScheme || drmKey || referer || cookie || origin || userAgent);
 
       // Network request filter: route requests through the backend proxy when needed
       player.getNetworkingEngine()?.registerRequestFilter((type: any, request: any) => {
@@ -182,12 +185,21 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
 
       // Clear any previous error before loading
       setError(null);
+      setCorsBlocked(false);
 
       try {
         await player.load(streamUrl);
       } catch (e: any) {
         if (destroyed) return; // Don't set errors if we're already cleaning up
         console.error('Error code', e.code, 'object', e);
+        
+        // Detect CORS / network block errors when NOT using proxy
+        // Error 1001 = BAD_HTTP_STATUS on manifest, 1002 = HTTP_ERROR
+        if (!needsProxy && (e.code === 1001 || e.code === 1002)) {
+          setCorsBlocked(true);
+          return;
+        }
+        
         if (e.code === 7002) {
           setError("The broadcast appears to have ended or is experiencing network delays.");
         } else if (e.code === 6007) {
@@ -213,7 +225,73 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
         playerRef.current = null;
       }
     };
-  }, [streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl, referer, cookie, origin, userAgent]);
+  }, [streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl, referer, cookie, origin, userAgent, forceProxy]);
+
+  // CORS Blocked Fallback UI
+  if (corsBlocked) {
+    return (
+      <div className={`relative w-full bg-black overflow-hidden flex items-center justify-center ${className}`}>
+        <div className="flex flex-col items-center gap-6 p-8 text-center max-w-md">
+          {/* Shield Icon */}
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+
+          <div>
+            <h3 className="text-white text-lg font-semibold mb-2">Stream Protected by CORS</h3>
+            <p className="text-white/50 text-sm leading-relaxed">
+              This stream's server blocks playback from third-party websites. You can open it directly in your browser instead.
+            </p>
+          </div>
+
+          {/* Open in Browser Button */}
+          <a
+            href={streamUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-105"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Open Stream in Browser
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>
+
+          {/* Try with Proxy Button */}
+          <button
+            onClick={() => {
+              setCorsBlocked(false);
+              setForceProxy(true);
+            }}
+            className="text-white/40 hover:text-white/70 text-xs underline underline-offset-2 transition-colors"
+          >
+            Try with backend proxy instead
+          </button>
+
+          {/* Extension Tip */}
+          <div className="flex items-start gap-3 bg-white/5 rounded-lg p-3 border border-white/10 text-left">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400 shrink-0 mt-0.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <p className="text-white/40 text-xs leading-relaxed">
+              <span className="text-white/60 font-medium">Tip:</span> Install the "Native HLS Playback" Chrome extension for the best experience with fullscreen, quality selection, and more.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={uiContainerRef} className={`relative w-full bg-black overflow-hidden flex items-center justify-center group ${className}`}>
@@ -240,3 +318,4 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
     </div>
   );
 }
+
