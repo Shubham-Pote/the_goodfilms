@@ -67,7 +67,8 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
 
       if (destroyed) return;
 
-      const player = new shaka.Player(videoRef.current);
+      const player = new shaka.Player();
+      await player.attach(videoRef.current);
       playerRef.current = player;
 
       // Initialize the Shaka Player UI Overlay
