@@ -97,8 +97,10 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
         }
       });
 
-      // Always route requests through the backend proxy to bypass CORS for 3rd-party streams
-      const needsProxy = true;
+      // Dynamically decide if we need a proxy. 
+      // If the stream requires DRM, custom headers, or specific spoofing, we MUST use the proxy.
+      // Otherwise, we fetch directly from the browser to bypass Datacenter IP blocks for standard streams.
+      const needsProxy = Boolean(drmScheme || drmKey || referer || cookie || origin || userAgent);
 
       // Network request filter: route requests through the backend proxy when needed
       player.getNetworkingEngine()?.registerRequestFilter((type: any, request: any) => {
