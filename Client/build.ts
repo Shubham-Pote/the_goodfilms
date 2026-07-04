@@ -10,6 +10,7 @@ const entrypoints = [...new Bun.Glob("src/**/*.html").scanSync()];
 const result = await Bun.build({
   entrypoints,
   outdir,
+  publicPath: "/",
   plugins: [tailwind],
   minify: true,
   target: "browser",

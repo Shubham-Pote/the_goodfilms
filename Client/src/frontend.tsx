@@ -16,5 +16,9 @@ const app = (
   </StrictMode>
 );
 
-// https://bun.com/docs/bundler/hot-reloading#import-meta-hot-data
-(import.meta.hot.data.root ??= createRoot(elem)).render(app);
+// Safely handle hot module reloading in development, falling back to a standard mount in production
+const root = import.meta.hot
+  ? (import.meta.hot.data.root ??= createRoot(elem))
+  : createRoot(elem);
+
+root.render(app);
