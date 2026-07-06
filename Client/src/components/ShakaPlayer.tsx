@@ -90,12 +90,14 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
       
       // Listen for error events.
       player.addEventListener('error', (event: any) => {
-        console.error('Error code', event.detail.code, 'object', event.detail);
+        if (event.detail.code !== 6006) {
+          console.error('Error code', event.detail.code, 'object', event.detail);
+        }
         if (event.detail.code === 7002) {
           setError("The broadcast appears to have ended or is experiencing network delays.");
         } else if (event.detail.code === 6012) {
           setError("Unable to decrypt this stream. The DRM license may be invalid.");
-        } else {
+        } else if (event.detail.code !== 6006) {
           setError(`We encountered a stream issue (Code: ${event.detail.code}).`);
         }
       });
@@ -195,7 +197,9 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
         await player.load(streamUrl);
       } catch (e: any) {
         if (destroyed) return; // Don't set errors if we're already cleaning up
-        console.error('Error code', e.code, 'object', e);
+        if (e.code !== 6006) {
+          console.error('Error code', e.code, 'object', e);
+        }
         
         // Detect CORS / network block errors when NOT using proxy
         // Error 1001 = BAD_HTTP_STATUS on manifest, 1002 = HTTP_ERROR
@@ -210,7 +214,7 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
           setError("DRM license request failed. The keys may be incorrect or expired.");
         } else if (e.code === 6012) {
           setError("Unable to decrypt this stream. The DRM license may be invalid.");
-        } else {
+        } else if (e.code !== 6006) {
           setError(`We encountered a stream issue (Code: ${e.code}).`);
         }
       }
@@ -317,7 +321,6 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
         ref={videoRef}
         className="w-full h-full object-contain"
         autoPlay
-        muted // Muted to allow autoplay without user interaction in most browsers
       />
     </div>
   );
