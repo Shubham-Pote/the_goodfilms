@@ -167,25 +167,35 @@ export function ShakaPlayer({ streamUrl, drmScheme, drmKeyId, drmKey, licenseUrl
           parseInbandPsshEnabled: true, // Crucial for HLS DRM streams that don't advertise PSSH in manifest
         },
         streaming: {
-          bufferingGoal: 60,       // Buffer up to 60 seconds of video to prevent stalls
-          rebufferingGoal: 5,      // Require 5 seconds of buffer to resume after a stall
+          bufferingGoal: 30,       // Buffer 30s ahead (optimized from 60s for lower memory & faster adaptation)
+          rebufferingGoal: 2,      // Resume playback much faster (2s instead of 5s) after a stall
           bufferBehind: 30,        // Keep 30 seconds behind for seeking back smoothly
-          lowLatencyMode: true,    // Live stream optimization
+          lowLatencyMode: true,    // Enable LL-HLS and LL-DASH support
+          jumpLargeGaps: true,     // Smooth streaming: Automatically skip missing segments instead of freezing
+          inaccurateManifestTolerance: 0.1, // Tolerate slight manifest timing errors without stalling
+          stallEnabled: true,      // Actively detect if the browser's video decoder gets stuck
+          stallThreshold: 1,       // Consider it a stall if the video freezes for 1 second despite having buffer
+          stallSkip: 0.1,          // Nudge the playhead forward by 100ms to jumpstart a stuck decoder
           retryParameters: {
-            maxAttempts: 5,        // Retry failed segments up to 5 times
-            baseDelay: 1000,       // Start retry delay at 1 second
+            maxAttempts: 3,        // Fail faster to switch qualities instead of hanging
+            baseDelay: 500,        // Extremely fast retry delay (500ms) for real-time responsiveness
+            backoffFactor: 2,
           }
         },
         manifest: {
           retryParameters: {
-            maxAttempts: 5,
-            baseDelay: 1000,
+            maxAttempts: 3,
+            baseDelay: 500,
           },
+          dash: {
+            autoCorrectDrift: true, // Prevent the player from falling out of sync with live edges
+          }
         },
         abr: {
           enabled: true,
-          defaultBandwidthEstimate: 1000000, // Start with lower bandwidth (1Mbps) for faster initial load
-          switchInterval: 2,                 // Check for better quality every 2s
+          defaultBandwidthEstimate: 100000000, // Start with high bandwidth (100Mbps) for highest quality initial load
+          switchInterval: 1,                 // Aggressively check for quality changes every 1s (down from 2s)
+          bandwidthDowngradeTarget: 0.85,    // Keep a safer margin to prevent buffering when bandwidth drops
         }
       });
 
