@@ -1,15 +1,12 @@
-# server
+# Server
 
-To install dependencies:
+Backend API for The Good Films.
+
+For full project overview and usage, see [../README.md](../README.md).
+
+Quick start:
 
 ```bash
 bun install
+bun --hot src/index.ts
 ```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.3.14. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

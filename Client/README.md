@@ -1,21 +1,12 @@
-# bun-react-tailwind-shadcn-template
+# Client
 
-To install dependencies:
+Frontend app for The Good Films.
+
+For full project overview and usage, see [../README.md](../README.md).
+
+Quick start:
 
 ```bash
 bun install
-```
-
-To start a development server:
-
-```bash
 bun dev
 ```
-
-To run for production:
-
-```bash
-bun start
-```
-
-This project was created using `bun init` in bun v1.3.14. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
