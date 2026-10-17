@@ -16,6 +16,23 @@ interface PlayerUrls {
   vidfast: string | null;
 }
 
+function normalizeVideasyUrl(raw: string): URL {
+  const url = new URL(raw);
+
+  if (url.hostname === "player.videasy.net") {
+    url.hostname = "player.videasy.ws";
+  }
+
+  if (!url.pathname.startsWith("/embed/")) {
+    const pathParts = url.pathname.split("/").filter(Boolean);
+    if (pathParts.length > 0) {
+      url.pathname = `/embed/${pathParts.join("/")}`;
+    }
+  }
+
+  return url;
+}
+
 export function PlayerPage() {
   const { type, id } = useParams();
   const navigate = useNavigate();
@@ -156,7 +173,7 @@ export function PlayerPage() {
     if (!raw) return null;
 
     if (activeServer === "videasy") {
-      const url = new URL(raw);
+      const url = normalizeVideasyUrl(raw);
       url.searchParams.set("color", "E50914");
       url.searchParams.set("overlay", "true");
       if (type === "tv") {
@@ -171,7 +188,7 @@ export function PlayerPage() {
   }, [playerUrls, activeServer, type]);
 
   const serverOptions = useMemo(() => {
-    const options = [{ value: "videasy", label: "VIDEASY" }];
+    const options = [{ value: "videasy", label: "VIDEASY WS" }];
     if (playerUrls?.vidfast) {
       options.push({ value: "vidfast", label: "VIDFAST" });
     }

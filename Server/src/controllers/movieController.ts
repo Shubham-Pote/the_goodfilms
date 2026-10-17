@@ -1,5 +1,7 @@
 import type { Request, Response } from "express";
 
+const VIDEASY_BASE = "https://player.videasy.ws/embed";
+
 export const getPlayerUrls = async (req: Request, res: Response) => {
   const { type, id } = req.params;
   const { s, e } = req.query;
@@ -10,19 +12,19 @@ export const getPlayerUrls = async (req: Request, res: Response) => {
     let vidfastUrl = "";
 
     if (type === "movie") {
-      videasyUrl = `https://player.videasy.net/movie/${id}`;
+      videasyUrl = `${VIDEASY_BASE}/movie/${id}`;
       twoEmbedUrl = `https://www.2embed.cc/embed/${id}`; 
       vidfastUrl = `https://vidfast.pro/movie/${id}?autoPlay=true`;
     } else if (type === "tv") {
-      videasyUrl = `https://player.videasy.net/tv/${id}/${s}/${e}`;
+      videasyUrl = `${VIDEASY_BASE}/tv/${id}/${s}/${e}`;
       twoEmbedUrl = `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`;
       vidfastUrl = `https://vidfast.pro/tv/${id}/${s}/${e}?autoPlay=true`;
     } else if (type === "anime") {
         if (e) {
-             videasyUrl = `https://player.videasy.net/anime/${id}/${e}`;
+             videasyUrl = `${VIDEASY_BASE}/anime/${id}/${e}`;
              vidfastUrl = `https://vidfast.pro/tv/${id}/1/${e}?autoPlay=true`; // Assuming anime maps to season 1 tv show generally, adjust if needed
         } else {
-             videasyUrl = `https://player.videasy.net/anime/${id}`;
+             videasyUrl = `${VIDEASY_BASE}/anime/${id}`;
              vidfastUrl = `https://vidfast.pro/movie/${id}?autoPlay=true`;
         }
     } else {
