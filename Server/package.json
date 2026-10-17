@@ -4,6 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "build": "prisma migrate deploy",
+    "start": "bun src/index.ts",
     "postinstall": "prisma generate"
   },
   "devDependencies": {
