@@ -444,6 +444,9 @@ export function DetailsPage() {
       ? `${details.episode_run_time[0]}m`
       : "-";
 
+  const isReleasedMovie =
+    type !== "movie" || String(details?.status || "").toLowerCase() === "released";
+
   useEffect(() => {
     if (!id || !type) return;
     fetch(`https://api.themoviedb.org/3/${type}/${id}/similar?api_key=${TMDB_API_KEY}`)
@@ -567,25 +570,27 @@ export function DetailsPage() {
                   </p>
                 )}
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 w-full sm:w-auto">
-                  <Button
-                    onClick={() => navigate(`/play/${type}/${id}?s=${season}&e=1`)}
-                    className="bg-white text-black px-7 py-5 rounded-full text-sm font-semibold flex items-center justify-center gap-2 hover:bg-zinc-100 shadow-md shadow-black/30 hover:shadow-lg transition-all hover:-translate-y-0.5 w-full sm:w-auto"
-                  >
-                    <Play fill="currentColor" size={18} />
-                    Watch
-                  </Button>
-                  <Button
-                    onClick={() => handleOpenDownloadModal()}
-                    className={`px-7 py-5 rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 shadow-md w-full sm:w-auto ${isMovieDownloaded
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "bg-zinc-900 hover:bg-zinc-850 text-white border border-zinc-800"
-                      }`}
-                  >
-                    {isMovieDownloaded ? <Check size={18} /> : <Download size={18} />}
-                    {isMovieDownloaded ? "Downloaded" : "Download"}
-                  </Button>
-                </div>
+                {isReleasedMovie && (
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 w-full sm:w-auto">
+                    <Button
+                      onClick={() => navigate(`/play/${type}/${id}?s=${season}&e=1`)}
+                      className="bg-white text-black px-7 py-5 rounded-full text-sm font-semibold flex items-center justify-center gap-2 hover:bg-zinc-100 shadow-md shadow-black/30 hover:shadow-lg transition-all hover:-translate-y-0.5 w-full sm:w-auto"
+                    >
+                      <Play fill="currentColor" size={18} />
+                      Watch
+                    </Button>
+                    <Button
+                      onClick={() => handleOpenDownloadModal()}
+                      className={`px-7 py-5 rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 shadow-md w-full sm:w-auto ${isMovieDownloaded
+                        ? "bg-green-600 hover:bg-green-700 text-white"
+                        : "bg-zinc-900 hover:bg-zinc-850 text-white border border-zinc-800"
+                        }`}
+                    >
+                      {isMovieDownloaded ? <Check size={18} /> : <Download size={18} />}
+                      {isMovieDownloaded ? "Downloaded" : "Download"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
