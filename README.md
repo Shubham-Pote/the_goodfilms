@@ -6,7 +6,7 @@ It is built to feel simple: sign in, discover what to watch, and start streaming
 
 ## What You Can Do
 
-- Create an account and log in securely with JWT-based authentication.
+- log in Username - test , Password - test123 .
 - Browse trending and popular content.
 - Search for movies and shows.
 - Open a details page before watching.
