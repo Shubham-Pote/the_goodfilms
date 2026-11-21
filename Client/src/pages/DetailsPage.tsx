@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Play, Clock, Download, Calendar, Check, AlertCircle, Film, Tv, X, Trash2, Loader2, Grid, List, ExternalLink, HardDrive, FileVideo, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "../components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
   Dialog,
   DialogContent,
   DialogClose,
+  DialogTitle,
 } from "../components/ui/dialog";
 
 import { TMDB_API_KEY } from "@/lib/tmdb";
@@ -50,10 +51,15 @@ interface TMDBEpisode {
 export function DetailsPage() {
   const { type, id } = useParams();
   const navigate = useNavigate();
+  const { pathname, search } = useLocation();
 
   const [details, setDetails] = useState<any>(null);
+  const [detailsError, setDetailsError] = useState(false);
   const [similar, setSimilar] = useState<TMDBItem[]>([]);
   const [season, setSeason] = useState(1);
+  const openPlayer = (episode: number) => navigate(`/play/${type}/${id}?s=${season}&e=${episode}`, {
+    state: { returnTo: pathname + search },
+  });
   const [episodes, setEpisodes] = useState<TMDBEpisode[]>([]);
   const [isEpisodesLoading, setIsEpisodesLoading] = useState(false);
   const [cast, setCast] = useState<any[]>([]);
@@ -393,10 +399,17 @@ export function DetailsPage() {
   useEffect(() => {
     if (!id || !type) return;
 
+    const controller = new AbortController();
+    setDetails(null);
+    setDetailsError(false);
     fetch(
       `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&append_to_response=seasons`,
+      { signal: controller.signal },
     )
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Title unavailable");
+        return res.json();
+      })
       .then((data) => {
         setDetails(data);
         if (type === "tv" && data?.seasons?.length) {
@@ -406,7 +419,8 @@ export function DetailsPage() {
           }
         }
       })
-      .catch(console.error);
+      .catch(() => { if (!controller.signal.aborted) setDetailsError(true); });
+    return () => controller.abort();
   }, [id, type]);
 
   useEffect(() => {
@@ -471,45 +485,54 @@ export function DetailsPage() {
       .finally(() => setIsEpisodesLoading(false));
   }, [id, type, season]);
 
+  if (!details) return (
+    <main className="site-wrap detail-page">
+      <Button variant="outline" onClick={() => navigate(-1)}><ArrowLeft /> Back</Button>
+      <header className="page-heading"><h1>{detailsError ? "Title unavailable" : "Loading title…"}</h1></header>
+      {detailsError && <p className="state-panel" role="status">This title’s information couldn’t be loaded.</p>}
+    </main>
+  );
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      <main className="w-full max-w-[1400px] mx-auto flex flex-col gap-8 px-6 pb-16 pt-0 md:px-12">
-        <section className="relative overflow-hidden min-h-[70vh]">
+    <div className="detail-shell">
+      <main className="site-wrap detail-page flex flex-col gap-5">
+        <section className="detail-hero relative overflow-hidden grid items-end">
           <div className="absolute inset-0">
             {details?.backdrop_path && (
               <img
-                src={`https://image.tmdb.org/t/p/original${details.backdrop_path}`}
-                alt="Backdrop"
+                src={`https://image.tmdb.org/t/p/w1280${details.backdrop_path}`}
+                alt=""
                 className="w-full h-full object-cover opacity-70"
+                onError={(event) => { event.currentTarget.hidden = true; }}
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
           </div>
 
-          <div className="relative z-10 flex flex-col h-full min-h-[70vh] justify-end px-4 md:px-12 pb-8 md:pb-12 pt-20 md:pt-28">
-            <button
-              onClick={() => navigate(-1)}
-              className="absolute top-4 md:top-8 left-4 md:left-12 flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors z-20 bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </button>
+          <button
+            onClick={() => navigate(-1)}
+            className="player-control absolute z-20 top-4 md:top-6 left-4 md:left-10 flex min-h-11 items-center gap-2 px-3 text-sm"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </button>
 
-            <div className="flex flex-col md:flex-row gap-8 items-start">
+          <div className="relative z-10 flex flex-col justify-end px-4 md:px-10 pb-7 md:pb-10 pt-32 md:pt-24">
+            <div className="detail-copy flex flex-col md:flex-row gap-6 md:gap-8">
               <div className="hidden md:block flex-shrink-0">
                 {details?.poster_path && (
                   <img
                     src={`https://image.tmdb.org/t/p/w500${details.poster_path}`}
-                    alt="Poster"
-                    className="w-[200px] h-[300px] object-cover rounded-xl shadow-2xl border border-white/10"
+                    alt=""
+                    className="w-[172px] aspect-[2/3] object-cover rounded-md border border-white/15"
                   />
                 )}
               </div>
 
-              <div className="flex flex-col gap-3 pt-2">
+              <div className="min-w-0 flex flex-col gap-3 pt-2">
                 {(details?.tagline || (id && POPULAR_TAGLINES[id])) ? (
-                  <p className="text-red-500 text-sm font-semibold italic">
+                  <p className="text-primary text-sm font-semibold italic">
                     "{details?.tagline || POPULAR_TAGLINES[id!]}"
                   </p>
                 ) : null}
@@ -571,17 +594,17 @@ export function DetailsPage() {
                 )}
 
                 {isReleasedMovie && (
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 w-full sm:w-auto">
+                  <div className="flex flex-wrap items-center gap-3 pt-3">
                     <Button
-                      onClick={() => navigate(`/play/${type}/${id}?s=${season}&e=1`)}
-                      className="bg-white text-black px-7 py-5 rounded-full text-sm font-semibold flex items-center justify-center gap-2 hover:bg-zinc-100 shadow-md shadow-black/30 hover:shadow-lg transition-all hover:-translate-y-0.5 w-full sm:w-auto"
+                      onClick={() => openPlayer(1)}
+                      className="min-h-11 px-5"
                     >
                       <Play fill="currentColor" size={18} />
                       Watch
                     </Button>
                     <Button
                       onClick={() => handleOpenDownloadModal()}
-                      className={`px-7 py-5 rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 shadow-md w-full sm:w-auto ${isMovieDownloaded
+                      className={`min-h-11 px-5 ${isMovieDownloaded
                         ? "bg-green-600 hover:bg-green-700 text-white"
                         : "bg-zinc-900 hover:bg-zinc-850 text-white border border-zinc-800"
                         }`}
@@ -596,10 +619,11 @@ export function DetailsPage() {
           </div>
         </section>
 
-        <section className="flex flex-wrap gap-6 border-b border-zinc-900 text-sm">
+        <section className="detail-tabs flex flex-wrap gap-4 sm:gap-7 border-b text-sm" aria-label="Title information">
           {type === "tv" && (
             <button
               onClick={() => setActiveTab("episodes")}
+              aria-pressed={activeTab === "episodes"}
               className={`pb-3 ${activeTab === "episodes" ? "border-b-2 border-red-500 text-white" : "text-zinc-400 hover:text-white"}`}
             >
               Episodes
@@ -607,12 +631,14 @@ export function DetailsPage() {
           )}
           <button
             onClick={() => setActiveTab("similar")}
+            aria-pressed={activeTab === "similar"}
             className={`pb-3 ${activeTab === "similar" ? "border-b-2 border-red-500 text-white" : "text-zinc-400 hover:text-white"}`}
           >
             More Like This
           </button>
           <button
             onClick={() => setActiveTab("details")}
+            aria-pressed={activeTab === "details"}
             className={`pb-3 ${activeTab === "details" ? "border-b-2 border-red-500 text-white" : "text-zinc-400 hover:text-white"}`}
           >
             Details & Cast
@@ -620,8 +646,7 @@ export function DetailsPage() {
         </section>
 
         <section
-          className={`flex flex-col gap-4 transition-opacity duration-300 ${activeTab === "episodes" ? "opacity-100" : "opacity-0 pointer-events-none h-0 overflow-hidden"
-            }`}
+          className={activeTab === "episodes" ? "flex flex-col gap-4" : "hidden"}
         >
           {type === "tv" && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -700,7 +725,7 @@ export function DetailsPage() {
                     return (
                       <div
                         key={episodeItem.id}
-                        onClick={() => navigate(`/play/${type}/${id}?s=${season}&e=${episodeItem.episode_number}`)}
+                        onClick={() => openPlayer(episodeItem.episode_number)}
                         className="group flex flex-col bg-zinc-900/20 hover:bg-zinc-800/30 border border-zinc-900 hover:border-zinc-800 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.6)] cursor-pointer"
                       >
                         {/* Thumbnail */}
@@ -811,7 +836,7 @@ export function DetailsPage() {
                     return (
                       <div
                         key={episodeItem.id}
-                        onClick={() => navigate(`/play/${type}/${id}?s=${season}&e=${episodeItem.episode_number}`)}
+                        onClick={() => openPlayer(episodeItem.episode_number)}
                         className="group flex flex-col sm:flex-row sm:items-start gap-5 bg-zinc-900/30 hover:bg-zinc-800/40 border border-zinc-900 hover:border-zinc-800/80 rounded-2xl p-4 transition-all duration-300 cursor-pointer hover:shadow-lg"
                       >
                         {/* Episode Number */}
@@ -895,7 +920,7 @@ export function DetailsPage() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/play/${type}/${id}?s=${season}&e=${episodeItem.episode_number}`);
+                              openPlayer(episodeItem.episode_number);
                             }}
                             className="p-3 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all border border-zinc-850 hover:border-zinc-700"
                             title="Watch Episode"
@@ -935,8 +960,7 @@ export function DetailsPage() {
         </section>
 
         <section
-          className={`flex flex-col gap-4 transition-opacity duration-300 ${activeTab === "similar" ? "opacity-100" : "opacity-0 pointer-events-none h-0 overflow-hidden"
-            }`}
+          className={activeTab === "similar" ? "flex flex-col gap-4" : "hidden"}
         >
           <h3 className="text-xl font-semibold">More Like This</h3>
           {similar.length === 0 ? (
@@ -969,8 +993,7 @@ export function DetailsPage() {
         </section>
 
         <section
-          className={`flex flex-col gap-6 transition-opacity duration-300 ${activeTab === "details" ? "opacity-100" : "opacity-0 pointer-events-none h-0 overflow-hidden"
-            }`}
+          className={activeTab === "details" ? "flex flex-col gap-6" : "hidden"}
         >
           <div className="flex flex-col gap-4">
             <h3 className="text-xl font-semibold">Cast</h3>
@@ -1139,8 +1162,9 @@ export function DetailsPage() {
 
       {/* Download Modal */}
       <Dialog open={downloadModalOpen} onOpenChange={setDownloadModalOpen}>
-        <DialogContent className="bg-zinc-950 border border-zinc-800 rounded-[2rem] overflow-y-auto shadow-[0_0_50px_rgba(220,38,38,0.05)] p-6 sm:p-8 sm:max-w-[750px] md:max-w-[900px] !flex !flex-col max-h-[88vh] scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent animate-in zoom-in-95 duration-300">
-          <DialogClose className="absolute right-6 top-6 z-[100] rounded-full w-8 h-8 flex items-center justify-center bg-black/60 text-white hover:bg-black ring-2 ring-red-500/50 transition-all border border-red-500/30 hover:text-red-500 cursor-pointer shadow-xl">
+        <DialogContent showCloseButton={false} aria-describedby={undefined} className="bg-card overflow-y-auto p-5 sm:p-8 sm:max-w-[750px] md:max-w-[900px] !flex !flex-col max-h-[88dvh]">
+          <DialogTitle className="sr-only">Download options</DialogTitle>
+          <DialogClose aria-label="Close download options" className="absolute right-6 top-6 z-[100] rounded-md w-10 h-10 flex items-center justify-center bg-background text-foreground border hover:bg-accent">
             <X size={16} strokeWidth={3} />
             <span className="sr-only">Close</span>
           </DialogClose>

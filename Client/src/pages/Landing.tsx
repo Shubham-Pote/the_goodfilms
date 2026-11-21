@@ -1,8 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Play, Info, X } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Clock3, Film, Play, X } from "lucide-react";
+import gsap from "gsap";
+import { FeaturedArtwork } from "@/components/FeaturedArtwork";
+import { PosterLink } from "@/components/PosterLink";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "../components/ui/button";
-import { TMDB_API_KEY } from "@/lib/tmdb";
+import { TMDB_IMG, tmdbUrl, TMDB_API_KEY } from "@/lib/tmdb";
 
 interface TMDBItem {
   id: number;
@@ -54,84 +58,123 @@ const CATEGORIES = [
 ];
 
 function FeaturedHero() {
-  const [featured, setFeatured] = useState<TMDBItem | null>(null);
+  const [featured, setFeatured] = useState<TMDBItem>();
+  const [status, setStatus] = useState<"loading" | "ready" | "unavailable">("loading");
+  const section = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    // Fetch trending.
-    fetch(`https://api.themoviedb.org/3/trending/all/day?api_key=${TMDB_API_KEY}`)
-      .then(res => res.json())
-      .then(data => {
-        const results = data.results.filter((item: any) => item.backdrop_path);
-        // Pick a random trending item on each reload
-        const randomItem = results[Math.floor(Math.random() * results.length)];
-        setFeatured(randomItem);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    fetch(tmdbUrl("/trending/all/day"), { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Featured titles unavailable");
+        const data = await response.json();
+        const titles: TMDBItem[] = (data.results ?? []).filter((item: TMDBItem) =>
+          item.backdrop_path && (item.media_type === "movie" || item.media_type === "tv"));
+        const title = titles[Math.floor(Math.random() * titles.length)];
+        if (!title) throw new Error("Missing featured title");
+        setFeatured(title);
+        setStatus("ready");
       })
-      .catch(err => console.error("Failed to load featured:", err));
+      .catch(() => setStatus("unavailable"))
+      .finally(() => clearTimeout(timeout));
+
+    return () => { clearTimeout(timeout); controller.abort(); };
   }, []);
 
-  if (!featured) return <div className="h-[70vh] animate-pulse bg-zinc-900 w-full mb-12"></div>;
+  useEffect(() => {
+    if (!featured || !section.current) return;
+    const motion = gsap.matchMedia();
+    motion.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.timeline()
+        .from(".featured-art", { opacity: 0.55, duration: 0.64, ease: "power2.out" })
+        .from("[data-hero-copy]", { y: 10, opacity: 0.55, stagger: 0.06, duration: 0.38, ease: "power2.out" }, 0.04);
+    }, section.current);
+    return () => motion.revert();
+  }, [featured]);
 
-  const isTV = featured.media_type === "tv" || !featured.title;
+  if (!featured) return (
+    <section className="feature-message">
+      <h1>Find your next watch.</h1>
+      <p role="status">{status === "loading" ? "Loading featured titles…" : "Featured titles are temporarily unavailable."}</p>
+      <Button asChild><Link to="/search">Search the catalog <ArrowRight size={16} /></Link></Button>
+    </section>
+  );
+
+  const type = featured.media_type || "movie";
   const title = featured.title || featured.name;
+  const year = (featured.release_date || featured.first_air_date)?.slice(0, 4);
 
   return (
-    <div className="relative h-[82vh] w-full">
-      <div className="absolute inset-0">
-        <img
-          src={`https://image.tmdb.org/t/p/original${featured.backdrop_path}`}
-          alt={title}
-          className="w-full h-full object-cover opacity-60"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/85 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent" />
-      </div>
-
-      <div className="relative z-10 w-full h-full flex flex-col justify-end px-4 md:px-12 pb-20 md:pb-28 max-w-5xl">
-        <div className="inline-flex items-center gap-3 mb-4">
-          <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded shadow-lg uppercase tracking-wider">
-            FEATURED {isTV ? "SERIES" : "FILM"}
-          </span>
-          <span className="text-zinc-300 text-sm font-medium">
-            {new Date(featured.release_date || featured.first_air_date || 0).getFullYear() || ""}
-          </span>
-          <span className="text-yellow-500 text-sm flex items-center gap-1 font-bold">
-            ★ {featured.vote_average?.toFixed(1)}
-          </span>
-        </div>
-
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-white mb-3 md:mb-5 drop-shadow-2xl leading-[1.05] break-words line-clamp-3 md:line-clamp-4">
-          {title}
-        </h1>
-
-        <p className="text-sm sm:text-base md:text-xl text-zinc-300 mb-6 md:mb-8 line-clamp-3 md:line-clamp-4 max-w-2xl drop-shadow-md">
-          {featured.overview}
+    <section ref={section} className="featured" aria-label="Featured title">
+      <FeaturedArtwork key={featured.id} src={`${TMDB_IMG}/w1280${featured.backdrop_path}`}
+        mobileSrc={`${TMDB_IMG}/w780${featured.backdrop_path}`}
+        fallback={featured.poster_path ? `${TMDB_IMG}/w780${featured.poster_path}` : undefined} />
+      <div className="featured-shade" />
+      <div className="featured-copy">
+        <p className="eyebrow" data-hero-copy>In the spotlight</p>
+        <h1 data-hero-copy>{title}</h1>
+        <p className="feature-meta" data-hero-copy>
+          <span>{type === "tv" ? "Series" : "Film"}</span>
+          {year && <span>{year}</span>}
+          {Boolean(featured.vote_average) && <span aria-label={`TMDB rating ${featured.vote_average?.toFixed(1)} out of 10`}>★ {featured.vote_average?.toFixed(1)}</span>}
         </p>
-
-        <div className="flex items-center gap-2">
-          <Link to={`/play/${featured.media_type || (isTV ? "tv" : "movie")}/${featured.id}${isTV ? "?s=1&e=1" : ""}`}>
-            <Button className="bg-white text-black px-6 py-5 rounded-full text-sm md:text-base font-semibold flex items-center gap-2 shadow-md shadow-black/30 hover:bg-zinc-100 hover:shadow-lg hover:shadow-black/40 transition-all hover:-translate-y-0.5">
-              <Play fill="currentColor" size={20} />
-              Watch
-            </Button>
-          </Link>
-          <Link to={`/title/${featured.media_type || (isTV ? "tv" : "movie")}/${featured.id}`}>
-            <Button className="bg-white/5 text-white px-5 py-5 rounded-full text-sm md:text-base font-medium flex items-center gap-2 border border-white/20 hover:bg-white/15 hover:border-white/35 transition-all hover:-translate-y-0.5">
-              <Info size={18} />
-              Details
-            </Button>
-          </Link>
+        <p className="feature-overview" data-hero-copy>{featured.overview}</p>
+        <div className="feature-actions" data-hero-copy>
+          <Button asChild><Link to={`/play/${type}/${featured.id}${type === "tv" ? "?s=1&e=1" : ""}`} state={{ returnTo: "/" }}><Play fill="currentColor" /> Watch now</Link></Button>
+          <Button variant="outline" asChild><Link to={`/title/${type}/${featured.id}`}>Details <ArrowRight /></Link></Button>
         </div>
       </div>
-    </div>
+    </section>
+  );
+}
+
+function Shelf({ title, loading, children }: { title: string; loading?: boolean; children: React.ReactNode }) {
+  const row = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: true, end: true });
+  useEffect(() => {
+    const track = row.current;
+    if (!track) return;
+    const update = () => setEdges({
+      start: track.scrollLeft <= 1,
+      end: track.scrollLeft + track.clientWidth >= track.scrollWidth - 2,
+    });
+    const observer = new ResizeObserver(update);
+    observer.observe(track);
+    if (track.lastElementChild) observer.observe(track.lastElementChild);
+    track.addEventListener("scroll", update, { passive: true });
+    update();
+    return () => { observer.disconnect(); track.removeEventListener("scroll", update); };
+  }, [children]);
+
+  function move(direction: number) {
+    const track = row.current;
+    if (!track) return;
+    track.scrollBy({
+      left: direction * track.clientWidth * 0.82,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    });
+  }
+
+  return (
+    <section className="shelf" aria-label={title} aria-busy={loading || undefined}>
+      <div className="shelf-heading">
+        <h2>{title}</h2>
+        {!loading && (!edges.start || !edges.end) && (
+          <div className="shelf-controls">
+            <Button variant="outline" size="icon" onClick={() => move(-1)} disabled={edges.start} aria-label={`Scroll ${title} left`}><ChevronLeft /></Button>
+            <Button variant="outline" size="icon" onClick={() => move(1)} disabled={edges.end} aria-label={`Scroll ${title} right`}><ChevronRight /></Button>
+          </div>
+        )}
+      </div>
+      <div ref={row} className="shelf-track">{children}</div>
+    </section>
   );
 }
 
 function ContinueWatchingRow() {
   const [items, setItems] = useState<TMDBItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const rowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -229,125 +272,45 @@ function ContinueWatchingRow() {
     );
   };
 
-  if (!isLoading && items.length === 0) {
-    return (
-      <div className="mb-12 w-full px-4 md:px-12">
-        <h2 className="text-2xl font-bold mb-4 text-white/90">Continue Watching</h2>
-        <div className="flex items-center justify-center h-40 bg-zinc-900/40 rounded-xl border border-white/5">
-          <p className="text-zinc-500 text-sm font-medium">You don't have any active shows or movies to continue.</p>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <Shelf title="Continue watching" loading><div className="resume-skeleton" /></Shelf>;
 
-  const scrollLeft = () => {
-    if (rowRef.current) {
-      rowRef.current.scrollBy({ left: -window.innerWidth / 2, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (rowRef.current) {
-      rowRef.current.scrollBy({ left: window.innerWidth / 2, behavior: "smooth" });
-    }
-  };
+  if (!items.length) return (
+    <section className="resume-empty">
+      <Clock3 size={22} aria-hidden="true" />
+      <div><h2>Continue watching</h2><p>Movies and episodes you start will appear here.</p></div>
+    </section>
+  );
 
   return (
-    <div className="mb-12 w-full relative">
-      <h2 className="text-2xl font-bold mb-4 px-4 md:px-12 text-white/90">Continue Watching</h2>
-
-      {isLoading ? (
-        <div className="flex px-4 md:px-12 gap-4 overflow-hidden">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex-none w-72 aspect-video bg-zinc-800 rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="relative group px-4 md:px-12">
-          {/* Left Button */}
-          <button
-            onClick={scrollLeft}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-          >
-            <ChevronLeft size={24} />
-          </button>
-
-          {/* Row container */}
-          <div
-            ref={rowRef}
-            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {items.map((item, idx) => {
-              // Usually progress is in seconds. Let's calculate percentage if duration exists
-              const percent = item.duration ? Math.min(100, Math.max(0, (item.progress! / item.duration) * 100)) : 0;
-
-              return (
-                <Link
-                  key={`${item.id}-${idx}`}
-                  to={`/play/${item.media_type}/${item.id}${(item.media_type === "tv" || item.media_type === "anime") ? `?s=${item.season || 1}&e=${item.episode || 1}` : ""}`}
-                  className="flex-none w-72 relative rounded-md overflow-hidden transition duration-300 hover:scale-[1.03] z-0 hover:z-10 group/item shadow-lg"
-                >
-                  {/* Delete Button */}
-                  <button
-                    onClick={(e) => handleRemoveProgress(e, item)}
-                    className="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center transition-colors opacity-0 group-hover/item:opacity-100 shadow-md"
-                    title="Remove from Continue Watching"
-                  >
-                    <X size={14} />
-                  </button>
-
-                  <div className="aspect-video w-full relative bg-[#141414]">
-                    <img
-                      src={`https://image.tmdb.org/t/p/w500${item.backdrop_path || item.poster_path}`}
-                      alt={item.title || item.name}
-                      className="w-full h-full object-cover transition-opacity duration-300"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity bg-black/40">
-                      <div className="w-10 h-10 rounded-full border-2 border-white bg-black/40 flex items-center justify-center shadow-lg hover:bg-white/20 transition-colors">
-                        <Play className="text-white ml-0.5" fill="currentColor" size={16} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Title block that slides up on hover */}
-                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 via-black/80 to-transparent translate-y-full group-hover/item:translate-y-0 transition-transform duration-300 pointer-events-none">
-                    <h3 className="font-bold text-sm mb-1 truncate text-white drop-shadow-md">
-                      {item.title || item.name}
-                    </h3>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-zinc-300 font-medium tracking-wide drop-shadow-md">
-                        {item.media_type === "tv" && item.season && item.episode ? (
-                          `S${item.season} · E${item.episode}`
-                        ) : (
-                          new Date(item.release_date || item.first_air_date || 0).getFullYear() || "Movie"
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Right Button */}
-          <button
-            onClick={scrollRight}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-          >
-            <ChevronRight size={24} />
-          </button>
-        </div>
-      )}
-    </div>
+    <Shelf title="Continue watching">
+      {items.map((item) => {
+        const series = item.media_type === "tv" || item.media_type === "anime";
+        const percent = item.duration ? Math.min(100, Math.max(0, ((item.progress || 0) / item.duration) * 100)) : 0;
+        const title = item.title || item.name;
+        const path = item.backdrop_path || item.poster_path;
+        return (
+          <article className="resume-card" key={`${item.media_type}-${item.id}-${item.season}-${item.episode}`}>
+            <Link to={`/play/${item.media_type}/${item.id}${series ? `?s=${item.season || 1}&e=${item.episode || 1}` : ""}`} state={{ returnTo: "/" }}>
+              <div className="resume-art">
+                <Film size={22} aria-hidden="true" />
+                {path && <img src={`${TMDB_IMG}/w500${path}`} alt="" loading="lazy" onError={(event) => { event.currentTarget.hidden = true; }} />}
+                <span className="resume-play"><Play size={16} fill="currentColor" /></span>
+                {percent > 0 && <progress value={percent} max={100} aria-label="Playback progress" />}
+              </div>
+              <span className="poster-title">{title}</span>
+              {series && item.season && item.episode && <span className="poster-meta">Season {item.season} · Episode {item.episode}</span>}
+            </Link>
+            <Button className="resume-remove" variant="outline" size="icon" onClick={(event) => handleRemoveProgress(event, item)} aria-label={`Remove ${title} from continue watching`}><X size={16} /></Button>
+          </article>
+        );
+      })}
+    </Shelf>
   );
 }
 
-function MovieRow({ title, endpoint, mediaType }: { title: string; endpoint: string; mediaType: string }) {
+function MovieRow({ title, endpoint, mediaType, showUnavailable }: { title: string; endpoint: string; mediaType: string; showUnavailable: boolean }) {
   const [items, setItems] = useState<TMDBItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const rowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsLoading(true);
@@ -370,11 +333,11 @@ function MovieRow({ title, endpoint, mediaType }: { title: string; endpoint: str
     }
 
     const url = `https://api.themoviedb.org/3${endpoint}${endpoint.includes("?") ? "&" : "?"}api_key=${TMDB_API_KEY}`;
-    fetch(url)
+    fetch(url, { signal: AbortSignal.timeout(10000) })
       .then((res) => res.json())
       .then((data) => {
         if (data.results) {
-          const validItems = data.results.filter((i: any) => i.poster_path);
+          const validItems = data.results.filter((i: any) => i.poster_path && (!i.media_type || ["movie", "tv"].includes(i.media_type)));
           setItems(validItems);
           localStorage.setItem(CACHE_KEY, JSON.stringify({ data: validItems, ts: Date.now() }));
         }
@@ -383,83 +346,14 @@ function MovieRow({ title, endpoint, mediaType }: { title: string; endpoint: str
       .finally(() => setIsLoading(false));
   }, [endpoint, title]);
 
-  if (!isLoading && items.length === 0) return null;
-
-  const scrollLeft = () => {
-    if (rowRef.current) {
-      rowRef.current.scrollBy({ left: -window.innerWidth / 2, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (rowRef.current) {
-      rowRef.current.scrollBy({ left: window.innerWidth / 2, behavior: "smooth" });
-    }
-  };
+  if (!isLoading && items.length === 0) return showUnavailable ? <section className="shelf"><div className="shelf-heading"><h2>{title}</h2></div><p className="state-panel">No titles are available in this collection right now.</p></section> : null;
 
   return (
-    <div className="mb-12 w-full relative">
-      <h2 className="text-2xl font-bold mb-4 px-4 md:px-12">{title}</h2>
-
-      {isLoading ? (
-        <div className="flex px-4 md:px-12 gap-4 overflow-hidden">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex-none w-48 aspect-[2/3] bg-zinc-800 rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="relative group px-4 md:px-12">
-          {/* Left Button */}
-          <button
-            onClick={scrollLeft}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-          >
-            <ChevronLeft size={24} />
-          </button>
-
-          {/* Row container */}
-          <div
-            ref={rowRef}
-            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4 pt-2"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {items.map((item, idx) => (
-              <Link
-                key={`${item.id}-${idx}`}
-                to={`/title/${item.media_type || mediaType}/${item.id}`}
-                className="flex-none w-44 sm:w-48 relative rounded-md overflow-hidden transition duration-300 hover:scale-[1.03] z-0 hover:z-10 bg-zinc-900 group/grid shadow-lg"
-              >
-                <div className="aspect-[2/3] w-full">
-                  <img
-                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                    alt={item.title || item.name}
-                    className="w-full h-full object-cover transition-opacity duration-300"
-                    loading="lazy"
-                  />
-                </div>
-                {/* Slide up Title block on hover */}
-                {/* Title shown only on hover */}
-                <div className="absolute inset-x-0 bottom-0 p-3 flex justify-center opacity-0 group-hover/grid:opacity-100 transition-all duration-300 bg-gradient-to-t from-black/100 to-transparent">
-
-                  <h3 className="font-bold text-sm text-white drop-shadow-md">
-                    {item.title || item.name}
-                  </h3>
-
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Right Button */}
-          <button
-            onClick={scrollRight}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-          >
-            <ChevronRight size={24} />
-          </button>
-        </div>
-      )}
-    </div>
+    <Shelf title={title} loading={isLoading}>
+      {isLoading
+        ? Array.from({ length: 7 }, (_, index) => <div className="poster-skeleton" key={index} />)
+        : items.map((item) => <PosterLink key={`${item.media_type || mediaType}-${item.id}`} item={item} mediaType={mediaType} />)}
+    </Shelf>
   );
 }
 
@@ -514,127 +408,62 @@ function getTabCategories(tab: string) {
 
 export function Landing() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const genreParam = searchParams.get("genre") || "all";
+  const selectedGenre = searchParams.get("genre") || "all";
   const activeTab = searchParams.get("tab") || "";
-
-  const [selectedGenre, setSelectedGenre] = useState(genreParam);
-
   const [gridItems, setGridItems] = useState<TMDBItem[]>([]);
-  const [isGridLoading, setIsGridLoading] = useState(false);
-
-  const filteredCategories = getTabCategories(activeTab);
-
-  useEffect(() => {
-    setSelectedGenre(genreParam);
-  }, [genreParam]);
+  const [genreStatus, setGenreStatus] = useState<"loading" | "ready" | "error">("loading");
+  const categoryTitle = activeTab === "tv" ? "TV Shows" : activeTab === "anime" ? "Anime" : "Movies";
+  const genre = GENRES.find((option) => option.id === selectedGenre);
 
   useEffect(() => {
-    if (selectedGenre === "all") {
-      setGridItems([]);
-      return;
-    }
-
-    setIsGridLoading(true);
-    const url = `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${selectedGenre}`;
-
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.results) {
-          setGridItems(
-            data.results.filter((i: any) => i.poster_path),
-          );
-        }
+    if (selectedGenre === "all") return;
+    const controller = new AbortController();
+    setGenreStatus("loading");
+    fetch(tmdbUrl("/discover/movie", { with_genres: selectedGenre }), { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Genre unavailable");
+        const data = await response.json();
+        setGridItems((data.results ?? []).filter((item: TMDBItem) => item.poster_path));
+        setGenreStatus("ready");
       })
-      .catch(console.error)
-      .finally(() => setIsGridLoading(false));
+      .catch(() => { if (!controller.signal.aborted) setGenreStatus("error"); });
+    return () => controller.abort();
   }, [selectedGenre]);
 
+  function selectGenre(value: string) {
+    const params = new URLSearchParams(searchParams);
+    if (value === "all") params.delete("genre");
+    else params.set("genre", value);
+    setSearchParams(params);
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-black text-white overflow-x-hidden">
-      <style>{`
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-      `}</style>
-
-      <main className="flex-1 w-full mx-auto pb-8 bg-black">
-        {selectedGenre !== "all" ? (
-          <div className="px-4 md:px-12 max-w-7xl mx-auto pt-8">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-bold">
-                {`${GENRES.find(g => g.id === selectedGenre)?.name} Movies`}
-              </h2>
-              <Button variant="outline" onClick={() => { setSearchParams({ genre: "all" }); }} className="border-zinc-700 hover:bg-zinc-800">
-                Clear Filter
-              </Button>
-            </div>
-
-            {isGridLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="w-12 h-12 border-4 border-zinc-800 border-t-red-600 rounded-full animate-spin"></div>
-              </div>
-            ) : gridItems.length === 0 ? (
-              <div className="text-center text-zinc-500 py-12">No results found.</div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mt-2">
-                {gridItems.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`/title/${item.media_type || "movie"}/${item.id}`}
-                    className="relative rounded-md overflow-hidden transition duration-300 hover:scale-[1.03] z-0 hover:z-10 bg-zinc-900 group/grid shadow-lg"
-                  >
-                    <div className="aspect-[2/3] w-full">
-                      <img
-                        src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                        alt={item.title || item.name}
-                        className="w-full h-full object-cover transition-opacity duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="absolute inset-x-0 bottom-0 p-3 flex justify-center opacity-0 group-hover/grid:opacity-100 transition-all duration-300 bg-gradient-to-t from-black/100 to-transparent">
-                      <h3 className="font-bold text-sm text-white drop-shadow-md truncate text-center w-full">
-                        {item.title || item.name}
-                      </h3>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Only show hero and continue watching on Home tab */}
-            {!activeTab && (
-              <>
-                <FeaturedHero />
-                <ContinueWatchingRow />
-              </>
-            )}
-
-            {/* Tab title for non-home tabs */}
-            {activeTab && (
-              <div className="px-4 md:px-12 pt-8">
-                <h2 className="text-3xl font-bold capitalize">
-                  {activeTab === "tv" ? "TV Shows" : activeTab === "anime" ? "Anime" : "Movies"}
-                </h2>
-                <p className="text-zinc-400 text-sm mt-1">
-                  {activeTab === "tv"
-                    ? "Explore popular TV series, dramas, and more"
-                    : activeTab === "anime"
-                    ? "Discover the best Japanese animation"
-                    : "Browse the latest and greatest films"}
-                </p>
-              </div>
-            )}
-
-            {filteredCategories.map(cat => (
-              <MovieRow key={cat.title} {...cat} />
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+    <main className="site-wrap catalog-page">
+      {!activeTab && selectedGenre === "all" && <FeaturedHero />}
+      {(activeTab || selectedGenre !== "all") && (
+        <header className="page-heading"><h1>{selectedGenre !== "all" ? `${genre?.name || "Genre"} films` : categoryTitle}</h1></header>
+      )}
+      {(!activeTab || activeTab === "movies" || selectedGenre !== "all") && (
+        <div className="catalog-tools">
+          <span>{selectedGenre === "all" ? "Browse films by genre" : "Film genre"}</span>
+          <Select value={genre?.id || "all"} onValueChange={selectGenre}>
+            <SelectTrigger className="genre-select" aria-label="Film genre"><SelectValue /></SelectTrigger>
+            <SelectContent>{GENRES.map(({ id, name }) => <SelectItem key={id} value={id}>{name}</SelectItem>)}</SelectContent>
+          </Select>
+          {selectedGenre !== "all" && <Button variant="ghost" onClick={() => selectGenre("all")}>Clear filter</Button>}
+        </div>
+      )}
+      {selectedGenre !== "all" ? (
+        genreStatus === "loading" ? <p role="status" className="state-panel">Loading films…</p>
+          : genreStatus === "error" ? <p role="status" className="state-panel">This genre is temporarily unavailable.</p>
+          : gridItems.length ? <div className="poster-grid">{gridItems.map((item) => <PosterLink key={item.id} item={item} />)}</div>
+          : <p className="state-panel">No films found in this genre.</p>
+      ) : (
+        <>
+          {!activeTab && <ContinueWatchingRow />}
+          {getTabCategories(activeTab).map((category, index) => <MovieRow key={category.title} {...category} showUnavailable={index === 0} />)}
+        </>
+      )}
+    </main>
   );
 }

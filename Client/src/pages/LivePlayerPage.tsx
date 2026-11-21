@@ -79,9 +79,11 @@ export function LivePlayerPage() {
       }, 3500); // Hide UI after 3.5 seconds of inactivity
     };
 
-    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("pointermove", handleMouseMove);
+    document.addEventListener("pointerdown", handleMouseMove);
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("pointermove", handleMouseMove);
+      document.removeEventListener("pointerdown", handleMouseMove);
       if (hideUITimeoutRef.current) clearTimeout(hideUITimeoutRef.current);
     };
   }, [showServerMenu]);
@@ -111,14 +113,15 @@ export function LivePlayerPage() {
       {/* Top Overlay UI */}
       <div 
         className={`absolute top-0 left-0 right-0 z-50 p-3 md:p-6 pt-4 md:pt-8 flex flex-row items-center md:items-start justify-between bg-gradient-to-b from-black/90 via-black/40 to-transparent transition-all duration-500 ease-in-out ${
-          isUIVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"
+          isUIVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none focus-within:opacity-100 focus-within:translate-y-0 focus-within:pointer-events-auto"
         }`}
       >
         {/* Left: Back Button & Title */}
         <div className="flex items-center gap-2 md:gap-4 min-w-0 pr-2">
           <button 
             onClick={() => navigate("/live")}
-            className="p-1 md:p-2 opacity-70 hover:opacity-100 text-white transition-opacity shrink-0"
+            aria-label="Back to live events"
+            className="player-control size-11 grid place-items-center shrink-0"
           >
             <ArrowLeft className="w-6 h-6 md:w-8 md:h-8" />
           </button>
@@ -138,11 +141,13 @@ export function LivePlayerPage() {
           <div className="relative shrink-0">
             <button 
               onClick={() => setShowServerMenu(!showServerMenu)}
-              className="flex items-center gap-1.5 md:gap-2 px-2 py-2 opacity-70 hover:opacity-100 text-white text-sm md:text-base font-medium transition-opacity"
+              aria-label="Playback source"
+              aria-expanded={showServerMenu}
+              className="player-control flex items-center gap-2 px-3 min-h-11 text-sm font-medium"
             >
               <Server className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
               <span className="hidden sm:inline-block max-w-[120px] truncate">{activeStream?.name || "Select Source"}</span>
-              <span className="sm:hidden">Src</span>
+              <span className="sm:hidden">Source</span>
               <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 transition-transform duration-300 ${showServerMenu ? "rotate-180" : ""}`} />
             </button>
             
@@ -152,6 +157,7 @@ export function LivePlayerPage() {
                 {event.streams.map((stream) => (
                   <button
                     key={stream.id}
+                    aria-pressed={activeStream?.id === stream.id}
                     onClick={() => {
                       setActiveStream(stream);
                       setShowServerMenu(false);

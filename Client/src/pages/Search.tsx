@@ -1,137 +1,55 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
-import { TMDB_API_KEY } from "@/lib/tmdb";
-
-interface TMDBItem {
-  id: number;
-  title?: string;
-  name?: string;
-  poster_path: string;
-  backdrop_path?: string;
-  overview: string;
-  media_type?: "movie" | "tv";
-  release_date?: string;
-  first_air_date?: string;
-  vote_average?: number;
-}
+import { PosterLink, type PosterItem } from "@/components/PosterLink";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { tmdbUrl } from "@/lib/tmdb";
 
 export function SearchPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const query = searchParams.get("q") || "";
+  const [params, setParams] = useSearchParams();
+  const query = params.get("q")?.trim() || "";
+  const [input, setInput] = useState(query);
+  const [results, setResults] = useState<PosterItem[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("ready");
 
-  const [searchInput, setSearchInput] = useState(query);
-  const [results, setResults] = useState<TMDBItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchInput.trim()) {
-      setSearchParams({ q: searchInput.trim() });
-    }
-  };
-
-  // Keep input synced if query param changes
+  useEffect(() => setInput(query), [query]);
   useEffect(() => {
-    setSearchInput(query);
-  }, [query]);
-
-  // Fetch search results
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-
-    setIsLoading(true);
-    fetch(
-      `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
-        query.trim()
-      )}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.results) {
-          setResults(
-            data.results.filter(
-              (item: any) =>
-                item.poster_path &&
-                (item.media_type === "movie" ||
-                  item.media_type === "tv" ||
-                  !item.media_type)
-            )
-          );
-        }
+    if (!query) return;
+    const controller = new AbortController();
+    setStatus("loading");
+    fetch(tmdbUrl("/search/multi", { query }), { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Search unavailable");
+        const data = await response.json();
+        setResults((data.results ?? []).filter((item: PosterItem) =>
+          item.poster_path && (!item.media_type || item.media_type === "movie" || item.media_type === "tv")));
+        setStatus("ready");
       })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
+      .catch(() => { if (!controller.signal.aborted) setStatus("error"); });
+    return () => controller.abort();
   }, [query]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-black text-white overflow-x-hidden">
-      {/* Main Content */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-12 pt-6 md:pt-10 pb-16">
-        <div className="flex flex-col gap-6">
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-            Search
-          </h1>
-
-          {/* Large Search Box */}
-          <form onSubmit={handleSearchSubmit} className="relative w-full max-w-[620px]">
-            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-zinc-400">
-              <Search size={20} />
-            </div>
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-14 pr-6 py-3.5 bg-zinc-900 border border-red-950/60 rounded-full outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all text-base text-white"
-            />
-          </form>
-
-          {/* Heading Results */}
-          <h2 className="text-lg font-bold text-white mt-8 mb-4">
-            Movies & TV
-          </h2>
-
-          {/* Grid Results */}
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="w-12 h-12 border-4 border-zinc-800 border-t-red-600 rounded-full animate-spin"></div>
-            </div>
-          ) : results.length === 0 ? (
-            <div className="text-zinc-500 py-12 text-base">
-              {query ? `No results found for "${query}".` : "Type a search query to find movies and shows."}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-2">
-              {results.map((item) => (
-                <Link
-                  key={item.id}
-                  to={`/title/${item.media_type || "movie"}/${item.id}`}
-                  className="relative rounded-md overflow-hidden transition duration-300 hover:scale-[1.03] z-0 hover:z-10 bg-zinc-900 group/grid shadow-lg"
-                >
-                  <div className="aspect-[2/3] w-full bg-zinc-800">
-                    <img
-                      src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                      alt={item.title || item.name}
-                      className="w-full h-full object-cover transition-opacity duration-300"
-                      loading="lazy"
-                    />
-                  </div>
-                  {/* Slide up Title block on hover */}
-                  <div className="absolute inset-x-0 bottom-0 p-3 flex justify-center opacity-0 group-hover/grid:opacity-100 transition-all duration-300 bg-gradient-to-t from-black/100 to-transparent">
-                    <h3 className="font-bold text-sm text-white drop-shadow-md truncate text-center w-full">
-                      {item.title || item.name}
-                    </h3>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+    <main className="site-wrap catalog-page">
+      <header className="page-heading">
+        <h1>Search</h1>
+        <form className="search-field" role="search" onSubmit={(event) => {
+          event.preventDefault();
+          setParams(input.trim() ? { q: input.trim() } : {});
+        }}>
+          <Input type="search" aria-label="Search movies and series" placeholder="Find a movie or series" value={input} onChange={(event) => setInput(event.target.value)} />
+          <Button type="submit"><Search /> Search</Button>
+        </form>
+      </header>
+      <div className="section-line"><h2 className="section-heading">Movies & TV</h2>
+        {query && status === "ready" && <span className="search-summary">{results.length} {results.length === 1 ? "title" : "titles"}</span>}
+      </div>
+      {!query ? <p className="state-panel">Enter a title to search the catalog.</p>
+        : status === "loading" ? <p className="state-panel" role="status">Searching…</p>
+        : status === "error" ? <p className="state-panel" role="status">Search is temporarily unavailable.</p>
+        : results.length === 0 ? <p className="state-panel">No titles found for “{query}”.</p>
+        : <div className="poster-grid">{results.map((item) => <PosterLink key={`${item.media_type}-${item.id}`} item={item} />)}</div>}
+    </main>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Play, Server } from "lucide-react";
 import {
   Select,
@@ -36,9 +36,11 @@ function normalizeVideasyUrl(raw: string): URL {
 export function PlayerPage() {
   const { type, id } = useParams();
   const navigate = useNavigate();
+  const { state } = useLocation();
   const [searchParams] = useSearchParams();
 
   const [playerUrls, setPlayerUrls] = useState<PlayerUrls | null>(null);
+  const [sourcesUnavailable, setSourcesUnavailable] = useState(false);
   const [activeServer, setActiveServer] = useState<"videasy" | "twoEmbed" | "vidfast">(
     "videasy",
   );
@@ -95,12 +97,20 @@ export function PlayerPage() {
       playerApiUrl += `?s=${season}&e=${episode}`;
     }
 
-    fetch(playerApiUrl)
-      .then((res) => res.json())
+    const controller = new AbortController();
+    setSourcesUnavailable(false);
+    setPlayerUrls(null);
+    fetch(playerApiUrl, { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error("Playback unavailable");
+        return res.json();
+      })
       .then((data) => {
         if (data.servers) setPlayerUrls(data.servers);
+        else setSourcesUnavailable(true);
       })
-      .catch(console.error);
+      .catch(() => { if (!controller.signal.aborted) setSourcesUnavailable(true); });
+    return () => controller.abort();
   }, [id, type, season, episode]);
 
   useEffect(() => {
@@ -174,7 +184,7 @@ export function PlayerPage() {
 
     if (activeServer === "videasy") {
       const url = normalizeVideasyUrl(raw);
-      url.searchParams.set("color", "E50914");
+      url.searchParams.set("color", "F4BF75");
       url.searchParams.set("overlay", "true");
       if (type === "tv") {
         url.searchParams.set("nextEpisode", "true");
@@ -199,36 +209,36 @@ export function PlayerPage() {
   }, [playerUrls]);
 
   return (
-    <div className="fixed inset-0 bg-black text-white">
-      <div className="absolute top-2 left-2 md:top-4 md:left-4 z-20">
+    <div ref={playerRef} className="player-shell fixed inset-0 bg-black text-white">
+      <div className="player-toolbar absolute top-2 left-2 md:top-4 md:left-4">
         <button
-          onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/10 flex items-center justify-center"
+          onClick={() => navigate(state?.returnTo || `/title/${type}/${id}`, { replace: true })}
+          className="player-control size-11 flex items-center justify-center"
           aria-label="Go back"
         >
           <ArrowLeft size={16} />
         </button>
       </div>
 
-      <div className="absolute top-2 right-2 md:top-4 md:right-4 z-20 flex items-center gap-2">
-        <div className="flex items-center gap-2 bg-black/60 rounded-full px-1 border border-white/10">
+      <div className="player-toolbar absolute top-2 right-2 md:top-4 md:right-4 flex items-center gap-2">
+        <div className="player-control flex items-center gap-2 px-1">
           <div className="pl-3 flex items-center text-zinc-300">
             <Server size={12} />
           </div>
           <Select
             value={activeServer}
             onValueChange={(val) => setActiveServer(val as "videasy" | "twoEmbed" | "vidfast")}
-            disabled={serverOptions.length === 0}
+            disabled={!playerUrls}
           >
-            <SelectTrigger className="bg-transparent border-0 focus:ring-0 focus:ring-offset-0 text-xs font-bold text-white w-28 h-8 rounded-full cursor-pointer">
+            <SelectTrigger aria-label="Playback server" className="bg-transparent border-0 text-xs font-bold text-white w-28 min-h-10 cursor-pointer">
               <SelectValue placeholder="Server" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800 text-white min-w-[7rem]">
+            <SelectContent portalContainer={playerRef.current} className="min-w-[7rem]">
               {serverOptions.map((option) => (
                 <SelectItem
                   key={option.value}
                   value={option.value}
-                  className="focus:bg-red-900/30 focus:text-white cursor-pointer text-xs font-semibold"
+                  className="cursor-pointer text-xs font-semibold"
                 >
                   {option.label}
                 </SelectItem>
@@ -238,7 +248,7 @@ export function PlayerPage() {
         </div>
       </div>
 
-      <div ref={playerRef} className="absolute inset-0">
+      <div className="player-stage absolute inset-0">
         {currentSrc ? (
           <iframe
             src={currentSrc}
@@ -249,8 +259,9 @@ export function PlayerPage() {
             title="Video Player"
           ></iframe>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-zinc-500">
-            <Play size={48} className="animate-pulse opacity-50" />
+          <div className="absolute inset-0 flex flex-col gap-4 items-center justify-center p-6 text-center text-muted-foreground" role="status">
+            <Play size={35} className="text-primary" aria-hidden="true" />
+            <p>{sourcesUnavailable || playerUrls ? "This playback source is unavailable." : "Loading playback sources…"}</p>
           </div>
         )}
       </div>

@@ -1,166 +1,86 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { apiUrl } from "../lib/api";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Brand } from "@/components/Brand";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { apiUrl } from "@/lib/api";
+
+export function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="auth-page">
+      <div className="auth-main">
+        <Brand />
+        <div className="auth-form">{children}</div>
+        <div className="auth-foot">Movies, series & live events</div>
+      </div>
+      <div className="auth-art" aria-hidden="true">
+        <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=85&w=1500&auto=format&fit=crop" alt="" />
+      </div>
+    </main>
+  );
+}
 
 export function Login() {
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() => localStorage.getItem("remembered_username") || "");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(() => !!localStorage.getItem("remembered_username"));
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function handleLogin(event: React.FormEvent) {
+    event.preventDefault();
     setError("");
     setIsLoading(true);
     try {
-      const res = await fetch(apiUrl("/api/auth/login"), {
+      const response = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Login failed");
-
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Sign-in failed. Please try again.");
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      if (remember) localStorage.setItem("remembered_username", username);
+      else localStorage.removeItem("remembered_username");
       navigate("/");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof TypeError ? "Couldn't reach the sign-in service. Please try again." : err instanceof Error ? err.message : "Sign-in failed.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-black selection:bg-red-500/30">
-      {/* Background Image with Dark Overlay */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-50 hidden sm:block"
-        style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2025&auto=format&fit=crop')",
-        }}
-      />
-      <div className="absolute inset-0 z-0 bg-black/60 hidden sm:block" />
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/80 via-black/40 to-black hidden sm:block" />
-
-      {/* Header / Logo */}
-      <div className="relative z-20 px-4 sm:px-[5%] py-6 sm:py-8">
-        <Link to="/" className="inline-block text-white font-extrabold text-3xl sm:text-4xl tracking-tight">
-          the_goodfilms
-        </Link>
-      </div>
-
-      {/* Login Form Container */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-4 sm:px-0 pb-16 sm:pb-24">
-        <div className="w-full max-w-[450px] sm:bg-black/75 sm:p-16 rounded-md">
-
-          <h1 className="text-[32px] font-bold text-white mb-7">Sign In</h1>
-
-          {error && (
-            <div className="mb-4 p-3.5 bg-[#e87c03] rounded text-white text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <div className="relative">
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                className="w-full h-14 bg-[#333] border-none text-white px-5 rounded placeholder:text-transparent focus:bg-[#454545] focus:ring-0 peer"
-                placeholder="Username"
-              />
-              <label
-                htmlFor="username"
-                className={`absolute left-5 text-[#8c8c8c] transition-all duration-200 pointer-events-none
-                  ${username ? 'text-[11px] top-1.5' : 'text-[15px] top-4 peer-focus:text-[11px] peer-focus:top-1.5'}`}
-              >
-                Username
-              </label>
-            </div>
-
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full h-14 bg-[#333] border-none text-white px-5 pr-12 rounded placeholder:text-transparent focus:bg-[#454545] focus:ring-0 peer"
-                placeholder="Password"
-              />
-              <label
-                htmlFor="password"
-                className={`absolute left-5 text-[#8c8c8c] transition-all duration-200 pointer-events-none
-                  ${password ? 'text-[11px] top-1.5' : 'text-[15px] top-4 peer-focus:text-[11px] peer-focus:top-1.5'}`}
-              >
-                Password
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8c8c8c] hover:text-white transition-colors"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 mt-6 bg-[#e50914] hover:bg-[#c11119] text-white font-bold text-[16px] rounded transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-zinc-800 border-t-white rounded-full animate-spin mx-auto" />
-              ) : (
-                "Sign In"
-              )}
+    <AuthLayout>
+      <h1>Sign in</h1>
+      <form onSubmit={handleLogin} aria-busy={isLoading}>
+        {error && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+        <div className="grid gap-2">
+          <Label htmlFor="username">Username</Label>
+          <Input id="username" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Input id="password" autoComplete="current-password" type={showPassword ? "text" : "password"}
+              value={password} onChange={(event) => setPassword(event.target.value)} className="pr-14" required />
+            <Button variant="ghost" size="icon" type="button" className="absolute inset-y-0 right-0 my-auto size-11"
+              aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
             </Button>
-
-            <div className="flex justify-between items-center mt-2 text-[#b3b3b3] text-[13px]">
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="rememberMe" className="w-4 h-4 rounded-sm bg-[#737373] border-none checked:bg-white focus:ring-0 focus:ring-offset-0" />
-                <label htmlFor="rememberMe">Remember me</label>
-              </div>
-              <a href="#" className="hover:underline">Need help?</a>
-            </div>
-          </form>
-
-
-          <div className="mt-4 text-[#8c8c8c] text-[13px] leading-snug">
-            This page is protected by Google reCAPTCHA to ensure you're not a bot.{" "}
-            <a href="#" className="text-[#0071eb] hover:underline">Learn more.</a>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="relative z-10 w-full bg-black/75 border-t border-zinc-900/50 sm:bg-black/50 py-8 mt-auto sm:border-none px-4 sm:px-[5%]">
-        <div className="max-w-[1000px] mx-auto text-[#737373] text-[13px]">
-          <p className="mb-6">Questions? Dont Ask!!</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl">
-            <a href="#" className="hover:underline">FAQ</a>
-            <a href="#" className="hover:underline">Help Center</a>
-            <a href="#" className="hover:underline">Terms of Use</a>
-            <a href="#" className="hover:underline">Privacy</a>
-            <a href="#" className="hover:underline">Cookie Preferences</a>
-            <a href="#" className="hover:underline">Corporate Information</a>
-          </div>
-        </div>
-      </div>
-    </div>
+        <label className="flex items-center gap-2 text-sm py-1">
+          <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /> Remember my username
+        </label>
+        <Button type="submit" disabled={isLoading}>{isLoading ? "Signing in…" : "Sign in"} <ArrowRight /></Button>
+      </form>
+      <p className="auth-switch">New here? <Link to="/signup">Create an account</Link></p>
+    </AuthLayout>
   );
 }
-

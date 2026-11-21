@@ -2,6 +2,7 @@ import "./index.css";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
+import { SignUp } from "./pages/SignUp";
 import { DetailsPage } from "./pages/DetailsPage";
 import { PlayerPage } from "./pages/PlayerPage";
 import { SearchPage } from "./pages/Search";
@@ -23,17 +24,18 @@ function AppLayout() {
   // Hide header on player page (fullscreen experience)
   const isPlayerPage = location.pathname.startsWith("/play/");
   const isLivePlayerPage = location.pathname.startsWith("/live/") && location.pathname !== "/live";
-  const isAuthPage = location.pathname === "/login";
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup";
   const isDetailPage = location.pathname.startsWith("/title/");
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
+    <div className="app-shell">
       {!isPlayerPage && !isLivePlayerPage && !isAuthPage && !isDetailPage && <Header />}
       <Routes>
         <Route path="/title/:type/:id" element={<ProtectedRoute><DetailsPage /></ProtectedRoute>} />
         <Route path="/play/:type/:id" element={<ProtectedRoute><PlayerPage /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
         <Route path="/live" element={<ProtectedRoute><LivePage /></ProtectedRoute>} />
         <Route path="/live/:id" element={<ProtectedRoute><LivePlayerPage /></ProtectedRoute>} />
         <Route path="/admin/live" element={<ProtectedRoute><LiveAdminPage /></ProtectedRoute>} />

@@ -63,10 +63,11 @@ export function LiveAdminPage() {
       const res = await fetch(apiUrl("/api/live"), {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (!res.ok) throw new Error("Live administration is unavailable.");
       const data = await res.json();
-      setEvents(data);
+      setEvents(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to load events.");
     } finally {
       setLoading(false);
     }
@@ -213,40 +214,40 @@ export function LiveAdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black pt-24 px-6 flex justify-center py-20">
-        <div className="w-8 h-8 border-2 border-zinc-800 border-t-white rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-background pt-24 px-6 flex justify-center py-20">
+        <div className="w-8 h-8 border-2 border-border border-t-white rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 pt-24 pb-20 font-sans">
-      <div className="max-w-4xl mx-auto px-6">
+    <main className="site-wrap admin-page pb-20">
+      <div className="max-w-5xl mx-auto">
         
-        <header className="mb-12">
-          <h1 className="text-2xl font-medium text-white mb-1">Live Administration</h1>
-          <p className="text-sm text-zinc-500">Manage broadcasts, streams, and DRM configurations.</p>
+        <header className="page-heading">
+          <h1>Live administration</h1>
+          <p className="text-sm text-muted-foreground">Manage broadcasts, streams, and DRM configurations.</p>
         </header>
 
         {error && (
-          <div className="mb-6 p-4 border border-red-500/30 text-red-400 text-sm bg-red-500/5 rounded-md flex justify-between">
+          <div role="alert" className="mb-6 p-4 border border-red-500/30 text-red-400 text-sm bg-red-500/5 rounded-md flex justify-between">
             <span>{error}</span>
-            <button onClick={() => setError("")} className="hover:text-red-300">&times;</button>
+            <button onClick={() => setError("")} aria-label="Dismiss error" className="hover:text-red-300">&times;</button>
           </div>
         )}
 
         {/* Create Event Form */}
-        <section className="mb-12 border border-zinc-800 rounded-lg p-6 bg-zinc-950/50">
-          <h2 className="text-sm font-medium text-white mb-6 uppercase tracking-widest">New Event</h2>
+        <section className="mb-12 border border-border rounded-lg p-6 bg-card">
+          <h2 className="section-heading mb-5">New event</h2>
           <form onSubmit={handleCreateEvent} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs text-zinc-500">Title</label>
-                <Input placeholder="Event Title" value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)} required className="bg-transparent border-zinc-800 focus:border-white rounded-none h-10 px-3 text-sm" />
+                <label className="text-xs text-muted-foreground">Title</label>
+                <Input placeholder="Event Title" aria-label="Title" value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)} required className="bg-transparent border-border focus:border-white rounded-md h-10 px-3 text-sm" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs text-zinc-500">Status</label>
-                <select value={newEventStatus} onChange={e => setNewEventStatus(e.target.value as any)} className="w-full bg-transparent border border-zinc-800 focus:border-white rounded-none h-10 px-3 text-sm outline-none text-white appearance-none">
+                <label className="text-xs text-muted-foreground">Status</label>
+                <select aria-label="Status" value={newEventStatus} onChange={e => setNewEventStatus(e.target.value as any)} className="w-full bg-transparent border border-border focus:border-primary rounded-md h-10 px-3 text-sm text-foreground">
                   <option className="bg-zinc-900 text-white" value="UPCOMING">UPCOMING</option>
                   <option className="bg-zinc-900 text-white" value="LIVE">LIVE</option>
                   <option className="bg-zinc-900 text-white" value="ENDED">ENDED</option>
@@ -256,17 +257,17 @@ export function LiveAdminPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs text-zinc-500">Thumbnail URL</label>
-                <Input placeholder="https://..." value={newEventThumb} onChange={e => setNewEventThumb(e.target.value)} className="bg-transparent border-zinc-800 focus:border-white rounded-none h-10 px-3 text-sm" />
+                <label className="text-xs text-muted-foreground">Thumbnail URL</label>
+                <Input placeholder="https://..." aria-label="Thumbnail URL" value={newEventThumb} onChange={e => setNewEventThumb(e.target.value)} className="bg-transparent border-border focus:border-white rounded-md h-10 px-3 text-sm" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs text-zinc-500">Description</label>
-                <Input placeholder="Optional description" value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} className="bg-transparent border-zinc-800 focus:border-white rounded-none h-10 px-3 text-sm" />
+                <label className="text-xs text-muted-foreground">Description</label>
+                <Input placeholder="Optional description" aria-label="Description" value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} className="bg-transparent border-border focus:border-white rounded-md h-10 px-3 text-sm" />
               </div>
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button type="submit" className="bg-white text-black hover:bg-zinc-200 rounded-none h-9 px-6 text-sm font-medium">
+              <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-6 text-sm font-medium">
                 Create Event
               </Button>
             </div>
@@ -275,19 +276,20 @@ export function LiveAdminPage() {
 
         {/* Manage Events */}
         <section className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-zinc-800 pb-4 gap-4">
-            <h2 className="text-sm font-medium text-white uppercase tracking-widest">Manage Events ({events.length})</h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border pb-4 gap-4">
+            <h2 className="section-heading">Manage events <span className="text-muted-foreground">({events.length})</span></h2>
             
             {/* Admin Filter Tabs */}
-            <div className="flex bg-zinc-900 border border-zinc-800 rounded-sm p-1">
+            <div className="filter-group" role="group" aria-label="Filter events">
               {["ALL", "LIVE", "UPCOMING", "ENDED"].map((status) => (
                 <button
                   key={status}
                   onClick={() => setAdminFilter(status as any)}
-                  className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
+                  aria-pressed={adminFilter === status}
+                  className={`rounded px-3 font-semibold ${
                     adminFilter === status 
-                      ? "bg-white text-black" 
-                      : "text-zinc-500 hover:text-white"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-white"
                   }`}
                 >
                   {status}
@@ -297,7 +299,7 @@ export function LiveAdminPage() {
           </div>
 
           {events.length === 0 ? (
-            <div className="py-12 text-center text-zinc-600 text-sm border border-zinc-900 border-dashed rounded-lg">
+            <div className="py-12 text-center text-muted-foreground text-sm border border-border border-dashed rounded-lg">
               No events configured.
             </div>
           ) : (
@@ -305,64 +307,59 @@ export function LiveAdminPage() {
               {events
                 .filter(e => adminFilter === "ALL" || e.status === adminFilter)
                 .map(event => (
-                        <div key={event.id} className="border border-zinc-800 bg-black rounded-lg overflow-hidden transition-colors hover:border-zinc-700">
+                        <div key={event.id} className="border border-border bg-background rounded-lg overflow-hidden transition-colors hover:border-zinc-700">
                           
                           {/* List Item Header */}
                           {editingEventId === event.id ? (
-                            <div className="p-5 border-b border-zinc-800 bg-zinc-900/30">
+                            <div className="p-5 border-b border-border bg-zinc-900/30">
                               <form onSubmit={handleUpdateEvent} className="space-y-4">
                                 <div className="flex justify-between items-center mb-2">
                                   <h3 className="text-sm font-medium text-white">Edit Event</h3>
-                                  <button type="button" onClick={() => setEditingEventId(null)} className="text-xs text-zinc-500 hover:text-white">Cancel</button>
+                                  <button type="button" onClick={() => setEditingEventId(null)} className="text-xs text-muted-foreground hover:text-white">Cancel</button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                  <Input value={editEventTitle} onChange={e => setEditEventTitle(e.target.value)} required className="bg-black border-zinc-800 h-9 rounded-none text-sm" />
-                                  <select value={editEventStatus} onChange={e => setEditEventStatus(e.target.value as any)} className="bg-black border border-zinc-800 h-9 rounded-none px-3 text-sm text-white outline-none">
+                                  <Input aria-label="Title" value={editEventTitle} onChange={e => setEditEventTitle(e.target.value)} required className="bg-background border-border h-9 rounded-md text-sm" />
+                                  <select aria-label="Status" value={editEventStatus} onChange={e => setEditEventStatus(e.target.value as any)} className="bg-background border border-border h-9 rounded-md px-3 text-sm text-white outline-none">
                                     <option className="bg-zinc-900 text-white" value="UPCOMING">UPCOMING</option>
                                     <option className="bg-zinc-900 text-white" value="LIVE">LIVE</option>
                                     <option className="bg-zinc-900 text-white" value="ENDED">ENDED</option>
                                   </select>
                                 </div>
-                                <Input placeholder="Description" value={editEventDesc} onChange={e => setEditEventDesc(e.target.value)} className="bg-black border-zinc-800 h-9 rounded-none text-sm" />
-                                <Input placeholder="Thumbnail URL" value={editEventThumb} onChange={e => setEditEventThumb(e.target.value)} className="bg-black border-zinc-800 h-9 rounded-none text-sm" />
+                                <Input placeholder="Description" aria-label="Description" value={editEventDesc} onChange={e => setEditEventDesc(e.target.value)} className="bg-background border-border h-9 rounded-md text-sm" />
+                                <Input placeholder="Thumbnail URL" aria-label="Thumbnail URL" value={editEventThumb} onChange={e => setEditEventThumb(e.target.value)} className="bg-background border-border h-9 rounded-md text-sm" />
                                 <div className="flex justify-end">
-                                  <Button type="submit" size="sm" className="bg-white text-black hover:bg-zinc-200 rounded-none h-8 text-xs">Save</Button>
+                                  <Button type="submit" size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 h-8 text-xs">Save</Button>
                                 </div>
                               </form>
                             </div>
                           ) : (
                             <div 
-                              className="flex items-center justify-between p-4 cursor-pointer select-none"
-                              onClick={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}
+                              className="flex items-center justify-between gap-3 p-3"
                             >
-                              <div className="flex items-center gap-4 flex-1">
+                              <button type="button" className="flex items-center text-left gap-3 flex-1 min-w-0 rounded-md p-2 hover:bg-accent" aria-expanded={expandedEventId === event.id} onClick={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}>
                                 {getStatusDot(event.status)}
                                 <div>
                                   <h3 className="text-sm font-medium text-zinc-100">{event.title}</h3>
-                                  <div className="flex items-center gap-3 mt-1 text-xs text-zinc-600 font-mono">
-                                    <span>{event.id.slice(0,8)}</span>
-                                    <span>&bull;</span>
+                                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-mono">
                                     <span>{event.streams?.length || 0} streams</span>
                                   </div>
                                 </div>
-                              </div>
+                                {expandedEventId === event.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              </button>
                               <div className="flex items-center gap-4">
-                                <button onClick={(e) => { e.stopPropagation(); handleEditEventClick(event); }} className="text-zinc-500 hover:text-white transition-colors">
+                                <button onClick={(e) => { e.stopPropagation(); handleEditEventClick(event); }} aria-label={`Edit ${event.title}`} className="text-muted-foreground hover:text-white transition-colors">
                                   <Edit size={14} />
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id); }} className="text-zinc-600 hover:text-red-500 transition-colors">
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id); }} aria-label={`Delete ${event.title}`} className="text-muted-foreground hover:text-red-500 transition-colors">
                                   <Trash2 size={14} />
                                 </button>
-                                <div className="text-zinc-700">
-                                  {expandedEventId === event.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                </div>
                               </div>
                             </div>
                           )}
 
                           {/* Expanded Streams Section */}
                           {expandedEventId === event.id && !editingEventId && (
-                            <div className="border-t border-zinc-900 bg-zinc-950/30 p-5">
+                            <div className="border-t border-border bg-zinc-950/30 p-5">
                               
                               <div className="flex items-center justify-between mb-4">
                                 <h4 className="text-xs font-medium text-zinc-400 uppercase tracking-widest">Streams</h4>
@@ -377,52 +374,52 @@ export function LiveAdminPage() {
                               {event.streams && event.streams.length > 0 ? (
                                 <div className="space-y-2 mb-4">
                                   {event.streams.map(stream => (
-                                    <div key={stream.id} className="flex items-start justify-between p-3 border border-zinc-900 bg-black rounded-md">
+                                    <div key={stream.id} className="flex items-start justify-between p-3 border border-border bg-background rounded-md">
                                       <div className="flex-1 min-w-0 pr-4">
                                         <div className="flex items-center gap-2 mb-1">
                                           <span className="text-sm font-medium text-zinc-200">{stream.name}</span>
-                                          <span className="text-[10px] bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-400 font-mono border border-zinc-800">{stream.streamType}</span>
-                                          {stream.drmKeyId && <span className="text-[10px] bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-400 font-mono border border-zinc-800">DRM</span>}
+                                          <span className="text-[10px] bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-400 font-mono border border-border">{stream.streamType}</span>
+                                          {stream.drmKeyId && <span className="text-[10px] bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-400 font-mono border border-border">DRM</span>}
                                         </div>
-                                        <div className="text-xs text-zinc-600 truncate font-mono">
+                                        <div className="text-xs text-muted-foreground truncate font-mono">
                                           {stream.streamUrl}
                                         </div>
                                       </div>
-                                      <button onClick={() => handleDeleteStream(stream.id)} className="text-zinc-600 hover:text-red-500 pt-1 shrink-0">
+                                      <button onClick={() => handleDeleteStream(stream.id)} aria-label={`Delete stream ${stream.name}`} className="text-muted-foreground hover:text-red-500 pt-1 shrink-0">
                                         <Trash2 size={14} />
                                       </button>
                                     </div>
                                   ))}
                                 </div>
                               ) : (
-                                <div className="text-xs text-zinc-600 italic mb-4">No streams configured.</div>
+                                <div className="text-xs text-muted-foreground italic mb-4">No streams configured.</div>
                               )}
 
                               {/* Add Stream Form */}
                               {activeEventId === event.id && (
-                                <div className="border border-zinc-800 bg-black p-5 rounded-md mt-4">
+                                <div className="border border-border bg-background p-5 rounded-md mt-4">
                                   <form onSubmit={(e) => handleAddStream(e, event.id)} className="space-y-6">
                                     
                                     {/* Basics */}
                                     <div className="space-y-4">
                                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="md:col-span-2 space-y-1.5">
-                                          <label className="text-xs text-zinc-500">Name</label>
-                                          <Input placeholder="Stream Name" value={streamName} onChange={e => setStreamName(e.target.value)} required className="bg-transparent border-zinc-800 h-9 rounded-none text-sm focus:border-white" />
+                                          <label className="text-xs text-muted-foreground">Name</label>
+                                          <Input placeholder="Stream Name" aria-label="Stream name" value={streamName} onChange={e => setStreamName(e.target.value)} required className="bg-transparent border-border h-9 rounded-md text-sm focus:border-white" />
                                         </div>
                                         <div className="space-y-1.5">
-                                          <label className="text-xs text-zinc-500">Type</label>
-                                          <select value={streamType} onChange={e => setStreamType(e.target.value as any)} className="w-full bg-transparent border border-zinc-800 h-9 px-3 rounded-none text-sm text-white outline-none focus:border-white appearance-none">
+                                          <label className="text-xs text-muted-foreground">Type</label>
+                                          <select aria-label="Stream type" value={streamType} onChange={e => setStreamType(e.target.value as any)} className="w-full bg-transparent border border-border h-9 px-3 rounded-md text-sm text-foreground focus:border-primary">
                                             <option className="bg-zinc-900 text-white" value="DASH">DASH (.mpd)</option>
                                             <option className="bg-zinc-900 text-white" value="HLS">HLS (.m3u8)</option>
                                           </select>
                                         </div>
                                       </div>
                                       <div className="space-y-1.5">
-                                        <label className="text-xs text-zinc-500">URL</label>
+                                        <label className="text-xs text-muted-foreground">URL</label>
                                         <Input 
                                           placeholder="Manifest URL" 
-                                          value={streamUrl} 
+                                          aria-label="Manifest URL" value={streamUrl}
                                           onChange={e => {
                                             const val = e.target.value;
                                             if (val.includes('|')) {
@@ -438,40 +435,40 @@ export function LiveAdminPage() {
                                             }
                                           }} 
                                           required 
-                                          className="bg-transparent border-zinc-800 h-9 rounded-none text-sm font-mono focus:border-white" 
+                                          className="bg-transparent border-border h-9 rounded-md text-sm font-mono focus:border-white"
                                         />
                                       </div>
                                     </div>
 
                                     {/* Headers */}
                                     <div className="space-y-3">
-                                      <label className="text-xs text-zinc-500">Request Headers (Optional)</label>
+                                      <label className="text-xs text-muted-foreground">Request Headers (Optional)</label>
                                       <div className="grid grid-cols-2 gap-3">
-                                        <Input placeholder="Referer" value={referer} onChange={e => setReferer(e.target.value)} className="bg-transparent border-zinc-800 h-8 rounded-none text-xs focus:border-white" />
-                                        <Input placeholder="Origin" value={origin} onChange={e => setOrigin(e.target.value)} className="bg-transparent border-zinc-800 h-8 rounded-none text-xs focus:border-white" />
-                                        <Input placeholder="Cookie" value={cookie} onChange={e => setCookie(e.target.value)} className="bg-transparent border-zinc-800 h-8 rounded-none text-xs focus:border-white" />
-                                        <Input placeholder="User-Agent" value={userAgent} onChange={e => setUserAgent(e.target.value)} className="bg-transparent border-zinc-800 h-8 rounded-none text-xs focus:border-white" />
+                                        <Input placeholder="Referer" aria-label="Referer" value={referer} onChange={e => setReferer(e.target.value)} className="bg-transparent border-border h-8 rounded-md text-xs focus:border-white" />
+                                        <Input placeholder="Origin" aria-label="Origin" value={origin} onChange={e => setOrigin(e.target.value)} className="bg-transparent border-border h-8 rounded-md text-xs focus:border-white" />
+                                        <Input placeholder="Cookie" aria-label="Cookie" value={cookie} onChange={e => setCookie(e.target.value)} className="bg-transparent border-border h-8 rounded-md text-xs focus:border-white" />
+                                        <Input placeholder="User-Agent" aria-label="User agent" value={userAgent} onChange={e => setUserAgent(e.target.value)} className="bg-transparent border-border h-8 rounded-md text-xs focus:border-white" />
                                       </div>
                                     </div>
 
                                     {/* DRM */}
                                     <div className="space-y-3">
-                                      <label className="text-xs text-zinc-500">DRM Strategy</label>
+                                      <label className="text-xs text-muted-foreground">DRM Strategy</label>
                                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <select value={drmScheme} onChange={e => setDrmScheme(e.target.value as any)} className="w-full bg-transparent border border-zinc-800 h-9 px-3 rounded-none text-sm text-white outline-none focus:border-white appearance-none">
+                                        <select aria-label="DRM scheme" value={drmScheme} onChange={e => setDrmScheme(e.target.value as any)} className="w-full bg-transparent border border-border h-9 px-3 rounded-md text-sm text-white outline-none focus:border-white appearance-none">
                                           <option className="bg-zinc-900 text-white" value="None">None</option>
                                           <option className="bg-zinc-900 text-white" value="ClearKey">ClearKey</option>
                                           <option className="bg-zinc-900 text-white" value="Widevine">Widevine</option>
                                         </select>
                                         <div className="md:col-span-2">
                                           {drmScheme === "ClearKey" && (
-                                            <Input placeholder="KeyID:Key" value={clearKeyString} onChange={e => setClearKeyString(e.target.value)} className="bg-transparent border-zinc-800 h-9 rounded-none text-sm font-mono focus:border-white" />
+                                            <Input placeholder="KeyID:Key" value={clearKeyString} onChange={e => setClearKeyString(e.target.value)} className="bg-transparent border-border h-9 rounded-md text-sm font-mono focus:border-white" />
                                           )}
                                           {drmScheme === "Widevine" && (
-                                            <Input placeholder="License URL" value={licenseUrl} onChange={e => setLicenseUrl(e.target.value)} className="bg-transparent border-zinc-800 h-9 rounded-none text-sm font-mono focus:border-white" />
+                                            <Input placeholder="License URL" aria-label="License URL" value={licenseUrl} onChange={e => setLicenseUrl(e.target.value)} className="bg-transparent border-border h-9 rounded-md text-sm font-mono focus:border-white" />
                                           )}
                                           {drmScheme === "None" && (
-                                            <div className="h-9 flex items-center text-xs text-zinc-600">No encryption.</div>
+                                            <div className="h-9 flex items-center text-xs text-muted-foreground">No encryption.</div>
                                           )}
                                         </div>
                                       </div>
@@ -479,7 +476,7 @@ export function LiveAdminPage() {
 
                                     <div className="flex justify-end gap-3 pt-2">
                                       <button type="button" onClick={() => setActiveEventId(null)} className="text-xs text-zinc-400 hover:text-white px-3">Cancel</button>
-                                      <Button type="submit" className="bg-white text-black hover:bg-zinc-200 rounded-none h-8 px-6 text-xs font-medium">Add Stream</Button>
+                                      <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-6 text-xs font-medium">Add Stream</Button>
                                     </div>
                                   </form>
                                 </div>
@@ -493,6 +490,6 @@ export function LiveAdminPage() {
           )}
         </section>
       </div>
-    </div>
+    </main>
   );
 }
