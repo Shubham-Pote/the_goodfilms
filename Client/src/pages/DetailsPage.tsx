@@ -502,12 +502,11 @@ export function DetailsPage() {
               <img
                 src={`https://image.tmdb.org/t/p/w1280${details.backdrop_path}`}
                 alt=""
-                className="w-full h-full object-cover opacity-70"
+                className="detail-backdrop w-full h-full object-cover"
                 onError={(event) => { event.currentTarget.hidden = true; }}
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+            <div className="detail-shade absolute inset-0" />
           </div>
 
           <button
@@ -537,11 +536,11 @@ export function DetailsPage() {
                   </p>
                 ) : null}
 
-                <h1 className="text-3xl md:text-5xl font-extrabold leading-tight break-words">{title}</h1>
+                <h1>{title}</h1>
 
                 <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-300">
                   {details?.vote_average ? (
-                    <span className="text-yellow-400 font-bold flex items-center gap-1">
+                    <span className="text-primary font-bold flex items-center gap-1">
                       ★ {details.vote_average.toFixed(1)}
                     </span>
                   ) : null}
@@ -604,10 +603,8 @@ export function DetailsPage() {
                     </Button>
                     <Button
                       onClick={() => handleOpenDownloadModal()}
-                      className={`min-h-11 px-5 ${isMovieDownloaded
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "bg-zinc-900 hover:bg-zinc-850 text-white border border-zinc-800"
-                        }`}
+                      variant="outline"
+                      className={`min-h-11 px-5 ${isMovieDownloaded ? "text-primary" : ""}`}
                     >
                       {isMovieDownloaded ? <Check size={18} /> : <Download size={18} />}
                       {isMovieDownloaded ? "Downloaded" : "Download"}
@@ -619,12 +616,11 @@ export function DetailsPage() {
           </div>
         </section>
 
-        <section className="detail-tabs flex flex-wrap gap-4 sm:gap-7 border-b text-sm" aria-label="Title information">
+        <section className="detail-tabs" aria-label="Title information">
           {type === "tv" && (
             <button
               onClick={() => setActiveTab("episodes")}
               aria-pressed={activeTab === "episodes"}
-              className={`pb-3 ${activeTab === "episodes" ? "border-b-2 border-red-500 text-white" : "text-zinc-400 hover:text-white"}`}
             >
               Episodes
             </button>
@@ -632,14 +628,12 @@ export function DetailsPage() {
           <button
             onClick={() => setActiveTab("similar")}
             aria-pressed={activeTab === "similar"}
-            className={`pb-3 ${activeTab === "similar" ? "border-b-2 border-red-500 text-white" : "text-zinc-400 hover:text-white"}`}
           >
             More Like This
           </button>
           <button
             onClick={() => setActiveTab("details")}
             aria-pressed={activeTab === "details"}
-            className={`pb-3 ${activeTab === "details" ? "border-b-2 border-red-500 text-white" : "text-zinc-400 hover:text-white"}`}
           >
             Details & Cast
           </button>

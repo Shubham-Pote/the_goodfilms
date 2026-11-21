@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowRight, ChevronLeft, ChevronRight, Clock3, Film, Play, X } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Film, Play, Star, X } from "lucide-react";
 import gsap from "gsap";
 import { FeaturedArtwork } from "@/components/FeaturedArtwork";
 import { PosterLink } from "@/components/PosterLink";
@@ -58,73 +58,98 @@ const CATEGORIES = [
 ];
 
 function FeaturedHero() {
-  const [featured, setFeatured] = useState<TMDBItem>();
+  const [titles, setTitles] = useState<TMDBItem[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "unavailable">("loading");
   const section = useRef<HTMLElement>(null);
+  const featured = titles[activeIndex];
 
   useEffect(() => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    fetch(tmdbUrl("/trending/all/day"), { signal: controller.signal })
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(8000)]);
+    setStatus("loading");
+    fetch(tmdbUrl("/trending/all/day"), { signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Featured titles unavailable");
         const data = await response.json();
         const titles: TMDBItem[] = (data.results ?? []).filter((item: TMDBItem) =>
-          item.backdrop_path && (item.media_type === "movie" || item.media_type === "tv"));
-        const title = titles[Math.floor(Math.random() * titles.length)];
-        if (!title) throw new Error("Missing featured title");
-        setFeatured(title);
+          item.backdrop_path && (item.title || item.name) && (item.media_type === "movie" || item.media_type === "tv"));
+        if (!titles.length) throw new Error("Missing featured title");
+        setTitles(titles.slice(0, 3));
         setStatus("ready");
       })
-      .catch(() => setStatus("unavailable"))
-      .finally(() => clearTimeout(timeout));
+      .catch(() => {
+        if (!controller.signal.aborted) setStatus("unavailable");
+      });
 
-    return () => { clearTimeout(timeout); controller.abort(); };
-  }, []);
+    return () => controller.abort();
+  }, [attempt]);
 
   useEffect(() => {
     if (!featured || !section.current) return;
     const motion = gsap.matchMedia();
     motion.add("(prefers-reduced-motion: no-preference)", () => {
       gsap.timeline()
-        .from(".featured-art", { opacity: 0.55, duration: 0.64, ease: "power2.out" })
-        .from("[data-hero-copy]", { y: 10, opacity: 0.55, stagger: 0.06, duration: 0.38, ease: "power2.out" }, 0.04);
+        .from(".featured-art", { opacity: 0.35, duration: 0.52, ease: "power2.out" })
+        .from("[data-hero-copy]", { y: 8, opacity: 0.45, stagger: 0.035, duration: 0.34, ease: "power2.out" }, 0.04);
     }, section.current);
     return () => motion.revert();
   }, [featured]);
 
   if (!featured) return (
-    <section className="feature-message">
-      <h1>Find your next watch.</h1>
-      <p role="status">{status === "loading" ? "Loading featured titles…" : "Featured titles are temporarily unavailable."}</p>
-      <Button asChild><Link to="/search">Search the catalog <ArrowRight size={16} /></Link></Button>
+    <section className="feature-message" aria-labelledby="spotlight-title">
+      <Film className="feature-placeholder-icon" strokeWidth={0.55} aria-hidden="true" />
+      <p className="eyebrow">Spotlight</p>
+      <h1 id="spotlight-title">Find your next watch</h1>
+      <p className="feature-status" role="status">{status === "loading" ? "Loading featured titles…" : "Featured titles couldn’t load."}</p>
+      <div className="feature-actions">
+        <Button asChild><Link to="/search">Search titles <ArrowRight size={16} /></Link></Button>
+        {status === "unavailable" && <Button variant="outline" onClick={() => setAttempt(attempt + 1)}>Try again</Button>}
+      </div>
     </section>
   );
 
   const type = featured.media_type || "movie";
-  const title = featured.title || featured.name;
+  const title = featured.title || featured.name || "Untitled";
   const year = (featured.release_date || featured.first_air_date)?.slice(0, 4);
 
   return (
-    <section ref={section} className="featured" aria-label="Featured title">
-      <FeaturedArtwork key={featured.id} src={`${TMDB_IMG}/w1280${featured.backdrop_path}`}
-        mobileSrc={`${TMDB_IMG}/w780${featured.backdrop_path}`}
-        fallback={featured.poster_path ? `${TMDB_IMG}/w780${featured.poster_path}` : undefined} />
-      <div className="featured-shade" />
-      <div className="featured-copy">
-        <p className="eyebrow" data-hero-copy>In the spotlight</p>
-        <h1 data-hero-copy>{title}</h1>
-        <p className="feature-meta" data-hero-copy>
-          <span>{type === "tv" ? "Series" : "Film"}</span>
-          {year && <span>{year}</span>}
-          {Boolean(featured.vote_average) && <span aria-label={`TMDB rating ${featured.vote_average?.toFixed(1)} out of 10`}>★ {featured.vote_average?.toFixed(1)}</span>}
-        </p>
-        <p className="feature-overview" data-hero-copy>{featured.overview}</p>
-        <div className="feature-actions" data-hero-copy>
-          <Button asChild><Link to={`/play/${type}/${featured.id}${type === "tv" ? "?s=1&e=1" : ""}`} state={{ returnTo: "/" }}><Play fill="currentColor" /> Watch now</Link></Button>
-          <Button variant="outline" asChild><Link to={`/title/${type}/${featured.id}`}>Details <ArrowRight /></Link></Button>
+    <section ref={section} className="spotlight" aria-label="Spotlight">
+      <div className="featured">
+        <FeaturedArtwork key={`${type}-${featured.id}`} src={`${TMDB_IMG}/w1280${featured.backdrop_path}`}
+          mobileSrc={`${TMDB_IMG}/w780${featured.backdrop_path}`}
+          fallback={featured.poster_path ? `${TMDB_IMG}/w780${featured.poster_path}` : undefined} />
+        <div className="featured-copy">
+          <p className="eyebrow" data-hero-copy>Spotlight</p>
+          <h1 className={title.length > 34 ? "feature-title-long" : undefined} data-hero-copy>{title}</h1>
+          <p className="feature-meta" data-hero-copy>
+            <span>{type === "tv" ? "Series" : "Film"}{year && ` · ${year}`}</span>
+            {Boolean(featured.vote_average) && (
+              <span className="feature-score" aria-label={`TMDB rating ${featured.vote_average?.toFixed(1)} out of 10`}>
+                <Star size={13} fill="currentColor" aria-hidden="true" /> {featured.vote_average?.toFixed(1)}
+              </span>
+            )}
+          </p>
+          {featured.overview && <p className="feature-overview" data-hero-copy>{featured.overview}</p>}
+          <div className="feature-actions" data-hero-copy>
+            <Button asChild><Link to={`/play/${type}/${featured.id}${type === "tv" ? "?s=1&e=1" : ""}`} state={{ returnTo: "/" }}><Play fill="currentColor" /> Watch now</Link></Button>
+            <Button variant="outline" asChild><Link to={`/title/${type}/${featured.id}`}>Details <ArrowRight /></Link></Button>
+          </div>
         </div>
       </div>
+      {titles.length > 1 && (
+        <div className="spotlight-choices" role="group" aria-label="Choose a spotlight title">
+          {titles.map((item, index) => (
+            <button type="button" key={`${item.media_type}-${item.id}`} aria-pressed={activeIndex === index}
+              onClick={() => setActiveIndex(index)} className="spotlight-choice">
+              <img src={`${TMDB_IMG}/w300${item.backdrop_path}`} alt="" decoding="async" />
+              <span>{item.title || item.name}</span>
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -274,12 +299,7 @@ function ContinueWatchingRow() {
 
   if (isLoading) return <Shelf title="Continue watching" loading><div className="resume-skeleton" /></Shelf>;
 
-  if (!items.length) return (
-    <section className="resume-empty">
-      <Clock3 size={22} aria-hidden="true" />
-      <div><h2>Continue watching</h2><p>Movies and episodes you start will appear here.</p></div>
-    </section>
-  );
+  if (!items.length) return null;
 
   return (
     <Shelf title="Continue watching">
@@ -445,7 +465,7 @@ export function Landing() {
       )}
       {(!activeTab || activeTab === "movies" || selectedGenre !== "all") && (
         <div className="catalog-tools">
-          <span>{selectedGenre === "all" ? "Browse films by genre" : "Film genre"}</span>
+          <span>Film genre</span>
           <Select value={genre?.id || "all"} onValueChange={selectGenre}>
             <SelectTrigger className="genre-select" aria-label="Film genre"><SelectValue /></SelectTrigger>
             <SelectContent>{GENRES.map(({ id, name }) => <SelectItem key={id} value={id}>{name}</SelectItem>)}</SelectContent>
